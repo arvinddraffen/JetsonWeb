@@ -7,13 +7,18 @@ using System.Threading.Tasks;
 namespace JetsonWeb.Models
 {
     /// <summary>
-    /// Constructor for <see cref="Utilization"/> model
+    /// Constructor for <see cref="Utilization"></see> model.
     /// </summary>
     /// <remarks>
     /// Contents based on default report contents as listed in: https://slurm.schedmd.com/sreport.html
     /// </remarks>
     public class Utilization
     {
+        /// <summary>
+        /// Gets the primary key for the utilization report retrieved.
+        /// </summary>
+        [Key]
+        public int Id { get; }
         /// <summary>
         /// Gets the cluster for which the utilization report is generated.
         /// </summary>

@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using JetsonWeb.Models.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace JetsonWeb
 {
@@ -24,6 +26,8 @@ namespace JetsonWeb
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
+
+            services.AddDbContext<MvcUtilizationContext>(options => options.UseSqlite("Data Source=database.db"));      // TODO: rename database to whatever name is settled on
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
