@@ -30,7 +30,9 @@ namespace JetsonWeb.Data
         /// <inheritdoc/>
         /// <param name="options"></param>
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite("DataSource=data.db");
+        {
+            options.UseLazyLoadingProxies().UseSqlite("DataSource=data.db");
+        }
 
         /// <inheritdoc/>
         /// <param name="modelBuilder"></param>

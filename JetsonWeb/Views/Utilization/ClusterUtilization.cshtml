@@ -1,0 +1,109 @@
+﻿@model JetsonModels.Cluster
+@{
+    ViewData["Title"] = "Cluster Utilization";
+}
+
+<script type="text/javascript" src="https://www.chartjs.org/dist/2.9.3/Chart.min.js"></script>
+<script type="text/javascript" src="https://www.chartjs.org/samples/latest/utils.js"></script>
+
+<h1>Cluster Utilization</h1>
+
+<div id="SummaryTable">
+    <h4>Cluster @Html.DisplayNameFor(model => model.Id): @Html.DisplayFor(model => model.Id)</h4>
+    <hr />
+    <table class="ClusterInfo">
+        <tr class="ClusterInfo">
+            <th class="ClusterInfo">Node ID</th>
+            <th class="ClusterInfo">IP Address</th>
+        </tr>
+        @foreach(var item in Model.Nodes)
+        {
+            <tr class="ClusterInfo">
+                <td class="ClusterInfo"> @Html.DisplayFor(modelItem => item.Id) </td>
+                <td class="ClusterInfo"> @Html.DisplayFor(modelItem => item.IPAddress) </td>
+            </tr>
+        }
+    </table>
+</div>
+
+<div id="DoughnutGraphs">
+    <canvas id="node-utilization"></canvas>
+</div>
+
+<script>
+    var nodeMemoryUtilizationConfig = {
+        type: 'doughnut',
+        data: {
+            datasets: [{
+                data: [
+                    @{ 
+                        uint memUsed = 0, memAvailable = 0;
+                        foreach (var node in Model.Nodes)
+                        {
+                            var utilizationData = node.Utilization.OrderByDescending(m => m.TimeStamp).FirstOrDefault();
+                            memUsed += utilizationData.MemoryUsed;
+                            memAvailable += utilizationData.MemoryAvailable;
+                        }
+                    }
+                    @memUsed, @memAvailable
+                ],
+                backgroundColor: [
+                    window.chartColors.red,
+                    window.chartColors.green
+                ],
+                label: 'Memory Usage'
+            }],
+            labels: [
+                'Memory Used',
+                'Memory Available'
+            ]
+        },
+        options: {
+            responsive: true,
+            legend: {
+                position: 'top'
+            },
+            title: {
+                display: true,
+                text: 'Memory Usage'
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            }
+        }
+    };
+
+    window.onload = function () {
+        var ctx = this.document.getElementById('node-utilization').getContext('2d');
+        window.doughnut = new Chart(ctx, this.nodeMemoryUtilizationConfig);
+    };
+</script>
+
+<style>
+    .ClusterInfo
+    {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 25%;
+        border: 1px solid #dddddd;
+        text-align: center;
+    }
+
+    th.ClusterInfo
+    {
+        padding: 6px;
+        background-color: #dddddd;
+    }
+
+    td.ClusterInfo
+    {
+        padding: 3px;
+    }
+
+    tr.ClusterInfo:hover
+    {
+        background-color: #dddddd;
+    }
+    
+</style>

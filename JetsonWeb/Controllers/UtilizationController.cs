@@ -27,6 +27,8 @@ namespace JetsonWeb.Controllers
                 return this.NotFound();
             }
 
+            this.ViewData["Nodes"] = cluster.Nodes.ToList();
+
             return this.View(cluster);
         }
     }
