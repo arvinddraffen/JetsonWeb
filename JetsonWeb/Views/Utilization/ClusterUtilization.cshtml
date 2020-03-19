@@ -26,36 +26,41 @@
     </table>
 </div>
 
-<div id="DoughnutGraphs">
-    <canvas id="node-utilization"></canvas>
+<div id="ClusterMemoryUtilization">
+    <div class="chart-container">
+        <canvas id="cluster-memory-utilization"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="cluster-per-node-current"></canvas>
+        </div>
 </div>
 
-<script>
-    var nodeMemoryUtilizationConfig = {
+    <script>
+    var clusterMemoryUtilizationConfig = {
         type: 'doughnut',
         data: {
             datasets: [{
                 data: [
-                    @{ 
-                        uint memUsed = 0, memAvailable = 0;
+                    @{
+                        uint clusterMemUsed = 0, clusterMemAvailable = 0;
                         foreach (var node in Model.Nodes)
                         {
                             var utilizationData = node.Utilization.OrderByDescending(m => m.TimeStamp).FirstOrDefault();
-                            memUsed += utilizationData.MemoryUsed;
-                            memAvailable += utilizationData.MemoryAvailable;
+                            clusterMemUsed += utilizationData.MemoryUsed;
+                            clusterMemAvailable += utilizationData.MemoryAvailable;
                         }
                     }
-                    @memUsed, @memAvailable
+                    @clusterMemUsed, @clusterMemAvailable
                 ],
                 backgroundColor: [
                     window.chartColors.red,
                     window.chartColors.green
                 ],
-                label: 'Memory Usage'
+                label: 'Cluster Total Memory Usage'
             }],
             labels: [
-                'Memory Used',
-                'Memory Available'
+                'Memory Used (MB)',
+                'Memory Available (MB)'
             ]
         },
         options: {
@@ -65,7 +70,7 @@
             },
             title: {
                 display: true,
-                text: 'Memory Usage'
+                text: 'Cluster Total Memory Usage'
             },
             animation: {
                 animateScale: true,
@@ -74,36 +79,86 @@
         }
     };
 
-    window.onload = function () {
-        var ctx = this.document.getElementById('node-utilization').getContext('2d');
-        window.doughnut = new Chart(ctx, this.nodeMemoryUtilizationConfig);
+    var clusterPerNodeCurrentConfig = {
+        type: 'bar',
+        data: {
+            datasets: [{
+                data: [
+                    @foreach(var node in Model.Nodes)
+                    {
+                        var powerData = node.Power.OrderByDescending(m => m.Timestamp).FirstOrDefault();
+                        @Html.Raw(powerData.Current.ToString());
+                        @Html.Raw(",");
+                    }
+                ],
+                backgroundColor: window.chartColors.blue,
+                borderWidth: 1,
+                label: 'Per-Node Current Draw'
+            }],
+            labels: [
+                @foreach(var node in Model.Nodes)
+                {
+                    @Html.Raw(node.Id.ToString());
+                    @Html.Raw(",");
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            legend: {
+                position: 'top'
+            },
+            title: {
+                display: true,
+                text: 'Cluster Per-Node Current Draw'
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            },
+            scales: {
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Current (A)'
+                    }
+                }]
+            }
+        }
     };
-</script>
 
-<style>
-    .ClusterInfo
-    {
-        font-family: arial, sans-serif;
-        border-collapse: collapse;
-        width: 25%;
-        border: 1px solid #dddddd;
-        text-align: center;
-    }
+    window.onload = function () {
+        var clusterMemoryCtx = this.document.getElementById('cluster-memory-utilization').getContext('2d');
+        var clusterPerNodeCurrentCtx = this.document.getElementById('cluster-per-node-current').getContext('2d');
+        window.clusterMemoryChart = new Chart(clusterMemoryCtx, this.clusterMemoryUtilizationConfig);
+        window.clusterPerNodeCurrentChart = new Chart(clusterPerNodeCurrentCtx, this.clusterPerNodeCurrentConfig);
+    };
+    </script>
 
-    th.ClusterInfo
-    {
-        padding: 6px;
-        background-color: #dddddd;
-    }
+    <style>
+        .ClusterInfo {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 25%;
+            border: 1px solid black;
+            text-align: center;
+        }
 
-    td.ClusterInfo
-    {
-        padding: 3px;
-    }
+        th.ClusterInfo {
+            padding: 6px;
+            background-color: #dddddd;
+        }
 
-    tr.ClusterInfo:hover
-    {
-        background-color: #dddddd;
-    }
-    
-</style>
+        td.ClusterInfo {
+            padding: 3px;
+        }
+
+        tr.ClusterInfo:hover {
+            background-color: #dddddd;
+        }
+
+        .chart-container{
+            width: 45%;
+            display: inline-block;
+        }
+    </style>
