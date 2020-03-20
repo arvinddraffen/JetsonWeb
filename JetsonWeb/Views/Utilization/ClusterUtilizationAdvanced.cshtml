@@ -1,0 +1,142 @@
+﻿@model JetsonModels.Cluster
+@{
+    ViewData["Title"] = "Cluster Utilization";
+}
+
+<script type="text/javascript" src="https://www.chartjs.org/dist/2.9.3/Chart.min.js"></script>
+<script type="text/javascript" src="https://www.chartjs.org/samples/latest/utils.js"></script>
+
+<h1>Cluster Utilization</h1>
+
+<div id="ClusterID">
+    <h4>Cluster @Html.DisplayNameFor(model => model.Id): @Html.DisplayFor(model => model.Id)</h4>
+    <hr />
+
+</div>
+
+<div id="ClusterPowerUtilizationRT2">
+    <div class="chart-container-rt2">
+        <canvas id="cluster-per-node-current-utilization-rt"></canvas>
+    </div>
+    <div class="chart-container-rt2">
+        <canvas id="cluster-per-node-voltage-utilization-rt"></canvas>
+    </div>
+</div>
+
+<div id="SummaryTable">
+    <table class="ClusterInfo">
+        <tr class="ClusterInfo">
+            <th class="ClusterInfo" colspan="2">Node Information</th>
+        </tr>
+        <tr class="ClusterInfo">
+            <th class="ClusterInfo">Node ID</th>
+            <th class="ClusterInfo">IP Address</th>
+        </tr>
+        @foreach (var item in Model.Nodes)
+        {
+            <tr class="ClusterInfo">
+                <td class="ClusterInfo"> @Html.DisplayFor(modelItem => item.Id) </td>
+                <td class="ClusterInfo"> @Html.DisplayFor(modelItem => item.IPAddress) </td>
+            </tr>
+        }
+    </table>
+</div>
+
+<script>
+
+    var clusterPerNodeVoltageUtilizationRTConfig = {
+        type: 'bar',
+        data: {
+            datasets: [{
+                data: [
+                    @foreach(var node in Model.Nodes)
+                    {
+                        var powerData = node.Power.OrderByDescending(m => m.Timestamp).FirstOrDefault();
+                        @Html.Raw(powerData.Voltage.ToString());
+                        @Html.Raw(",");
+                    }
+                ],
+                backgroundColor: window.chartColors.purple,
+                borderWidth: 1,
+                label: 'Per-Node Voltage Draw'
+            }],
+            labels: [
+                @foreach(var node in Model.Nodes)
+                {
+                    @Html.Raw(node.Id.ToString());
+                    @Html.Raw(",");
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            legend: {
+                position: 'top'
+            },
+            title: {
+                display: true,
+                text: 'Cluster Per-Node Voltage Draw'
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            },
+            scales: {
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Voltage (V)'
+                    },
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 6,
+                        suggestedMin: 0
+                    }
+                }]
+            }
+        }
+    };
+
+    window.onload = function () {
+        var clusterPerNodeVoltageUtilizationRTCtx = this.document.getElementById('cluster-per-node-voltage-utilization-rt').getContext('2d');
+
+        window.clusterPerNodeVoltageChart = new Chart(clusterPerNodeVoltageUtilizationRTCtx, this.clusterPerNodeVoltageUtilizationRTConfig);
+    };
+</script>
+
+<style>
+    .ClusterInfo {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 25%;
+        border: 1px solid black;
+        text-align: center;
+    }
+
+    th.ClusterInfo {
+        padding: 6px;
+        background-color: #dddddd;
+    }
+
+    td.ClusterInfo {
+        padding: 3px;
+    }
+
+    tr.ClusterInfo:hover {
+        background-color: #dddddd;
+    }
+
+    .chart-container-rt {
+        width: 45%;
+        margin: auto;
+    }
+
+    .chart-container-rt2 {
+        width: 45%;
+        display: inline-block;
+    }
+
+    #ClusterMemoryUtilizationRT {
+        margin: auto;
+    }
+</style>
