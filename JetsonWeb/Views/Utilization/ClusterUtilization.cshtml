@@ -8,35 +8,36 @@
 
 <h1>Cluster Utilization</h1>
 
-<div id="SummaryTable">
+<div id="ClusterID">
     <h4>Cluster @Html.DisplayNameFor(model => model.Id): @Html.DisplayFor(model => model.Id)</h4>
     <hr />
-    <table class="ClusterInfo">
-        <tr class="ClusterInfo">
-            <th class="ClusterInfo">Node ID</th>
-            <th class="ClusterInfo">IP Address</th>
-        </tr>
-        @foreach(var item in Model.Nodes)
-        {
-            <tr class="ClusterInfo">
-                <td class="ClusterInfo"> @Html.DisplayFor(modelItem => item.Id) </td>
-                <td class="ClusterInfo"> @Html.DisplayFor(modelItem => item.IPAddress) </td>
-            </tr>
-        }
-    </table>
+    
 </div>
 
-<div id="ClusterMemoryUtilization">
-    <div class="chart-container">
+<div id="ClusterMemoryUtilizationRT">
+    <div class="chart-container-rt">
         <canvas id="cluster-memory-utilization"></canvas>
     </div>
-    <div class="chart-container">
-        <canvas id="cluster-per-node-current"></canvas>
-        </div>
+</div>
+<div id="ClusterPowerUtilizationRT2">
+    <div class="chart-container-rt2">
+        <canvas id="cluster-per-node-memory-utilization-rt"></canvas>
+    </div>
+    <div class="chart-container-rt2">
+        <canvas id="cluster-per-node-cpu-usage-rt"></canvas>
+    </div>
+</div>
+<div id="ClusterPowerUtilizationRT2">
+    <div class="chart-container-rt2">
+        <canvas id="cluster-per-node-current-utilization-rt"></canvas>
+    </div>
+    <div class="chart-container-rt2">
+        <canvas id="cluster-per-node-power-utilization-rt"></canvas>
+    </div>
 </div>
 
-    <script>
-    var clusterMemoryUtilizationConfig = {
+<script>
+    var clusterMemoryUtilizationRTConfig = {
         type: 'doughnut',
         data: {
             datasets: [{
@@ -79,7 +80,76 @@
         }
     };
 
-    var clusterPerNodeCurrentConfig = {
+    var clusterPerNodeMemoryUtilizationRTConfig = {
+        type: 'bar',
+        data: {
+            datasets: [{
+                label: 'Memory Used',
+                data: [
+                    @foreach(var node in Model.Nodes)
+                    {
+                        var perNodeUtil = node.Utilization.OrderByDescending(m => m.TimeStamp).FirstOrDefault();
+                        @Html.Raw(perNodeUtil.MemoryUsed);
+                        @Html.Raw(",");
+                    }
+                ],
+                backgroundColor: window.chartColors.red,
+                borderWidth: 1,
+            }, {
+                label: 'Memory Available',
+                data: [
+                    @foreach(var node in Model.Nodes)
+                    {
+                        var perNodeUtil = node.Utilization.OrderByDescending(m => m.TimeStamp).FirstOrDefault();
+                        @Html.Raw(perNodeUtil.MemoryAvailable);
+                        @Html.Raw(",");
+                    }
+                ],
+                backgroundColor: window.chartColors.green,
+                borderWidth: 1,
+            }],
+            labels: [
+                @foreach(var node in Model.Nodes)
+                {
+                    @Html.Raw(node.Id.ToString());
+                    @Html.Raw(",");
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            legend: {
+                position: 'top'
+            },
+            title: {
+                display: true,
+                text: 'Cluster Per-Node Memory Information'
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            },
+            scales: {
+                xAxes: [{
+                    stacked: true,
+                }],
+                yAxes: [{
+                    stacked: true,
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Memory Usage (MB)'
+                    },
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 6,
+                        suggestedMin: 0
+                    }
+                }]
+            }
+        }
+    };
+
+    var clusterPerNodeCurrentUtilizationRTConfig = {
         type: 'bar',
         data: {
             datasets: [{
@@ -121,6 +191,123 @@
                     scaleLabel: {
                         display: true,
                         labelString: 'Current (A)'
+                    },
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 6,
+                        suggestedMin: 0
+                    }
+                }]
+            }
+        }
+    };
+
+    var clusterPerNodeCPUUtilizationRTConfig = {
+        type: 'bar',
+        data: {
+            datasets: [{
+                data: [
+                    @foreach(var node in Model.Nodes)
+                    {
+                        var utilData = node.Utilization.OrderByDescending(m => m.TimeStamp).FirstOrDefault();
+                        var cores = utilData.Cores;
+                        float avgUtilPctg = 0;
+                        foreach (var core in cores)
+                        {
+                            avgUtilPctg += core.UtilizationPercentage;
+                        }
+                        @Html.Raw(avgUtilPctg / cores.Count());
+                        @Html.Raw(",");
+                    }
+                ],
+                backgroundColor: window.chartColors.blue,
+                borderWidth: 1,
+                label: 'Per-Node Average CPU Usage'
+            }],
+            labels: [
+                @foreach(var node in Model.Nodes)
+                {
+                    @Html.Raw(node.Id.ToString());
+                    @Html.Raw(",");
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            legend: {
+                position: 'top'
+            },
+            title: {
+                display: true,
+                text: 'Cluster Per-Node CPU Usage'
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            },
+            scales: {
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'CPU Usage (%)'
+                    },
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 6,
+                        suggestedMin: 0
+                    }
+                }]
+            }
+        }
+    };
+
+     var clusterPerNodePowerUtilizationRTConfig = {
+        type: 'bar',
+        data: {
+            datasets: [{
+                data: [
+                    @foreach(var node in Model.Nodes)
+                    {
+                        var powerData = node.Power.OrderByDescending(m => m.Timestamp).FirstOrDefault();
+                        @Html.Raw(powerData.Power.ToString());
+                        @Html.Raw(",");
+                    }
+                ],
+                backgroundColor: window.chartColors.orange,
+                borderWidth: 1,
+                label: 'Per-Node Power Usage'
+            }],
+            labels: [
+                @foreach(var node in Model.Nodes)
+                {
+                    @Html.Raw(node.Id.ToString());
+                    @Html.Raw(",");
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            legend: {
+                position: 'top'
+            },
+            title: {
+                display: true,
+                text: 'Cluster Per-Node Power Usage'
+            },
+            animation: {
+                animateScale: true,
+                animateRotate: true
+            },
+            scales: {
+                yAxes: [{
+                    scaleLabel: {
+                        display: true,
+                        labelString: 'Power (W)'
+                    },
+                    ticks: {
+                        autoSkip: true,
+                        maxTicksLimit: 6,
+                        suggestedMin: 0
                     }
                 }]
             }
@@ -129,36 +316,43 @@
 
     window.onload = function () {
         var clusterMemoryCtx = this.document.getElementById('cluster-memory-utilization').getContext('2d');
-        var clusterPerNodeCurrentCtx = this.document.getElementById('cluster-per-node-current').getContext('2d');
-        window.clusterMemoryChart = new Chart(clusterMemoryCtx, this.clusterMemoryUtilizationConfig);
-        window.clusterPerNodeCurrentChart = new Chart(clusterPerNodeCurrentCtx, this.clusterPerNodeCurrentConfig);
+        var clusterPerNodeMemoryUtilizationRTCtx = this.document.getElementById('cluster-per-node-memory-utilization-rt').getContext('2d');
+        var clusterPerNodeCPUUsageRTCtx = this.document.getElementById('cluster-per-node-cpu-usage-rt').getContext('2d');
+        var clusterPerNodeCurrentUtilizationRTCtx = this.document.getElementById('cluster-per-node-current-utilization-rt').getContext('2d');
+        var clusterPerNodePowerUtilizationRTCtx = this.document.getElementById('cluster-per-node-power-utilization-rt').getContext('2d');
+
+        window.clusterMemoryChart = new Chart(clusterMemoryCtx, this.clusterMemoryUtilizationRTConfig);
+        window.clusterPerNodeMemoryChart = new Chart(clusterPerNodeMemoryUtilizationRTCtx, this.clusterPerNodeMemoryUtilizationRTConfig);
+        window.clusterPerNodeCPUChart = new Chart(clusterPerNodeCPUUsageRTCtx, this.clusterPerNodeCPUUtilizationRTConfig);
+        window.clusterPerNodeCurrentChart = new Chart(clusterPerNodeCurrentUtilizationRTCtx, this.clusterPerNodeCurrentUtilizationRTConfig);
+        window.clusterPerNodePowerChart = new Chart(clusterPerNodePowerUtilizationRTCtx, this.clusterPerNodePowerUtilizationRTConfig);
     };
-    </script>
+
+    setInterval(function () {
+        clusterPerNodePowerChart.config.data.datasets[0].data = [
+            @foreach(var node in Model.Nodes)
+            {
+                var powerData = node.Power.OrderByDescending(m => m.Timestamp).FirstOrDefault();
+                @Html.Raw(powerData.Power.ToString());
+                @Html.Raw(",");
+            }
+        ]
+        clusterPerNodePowerChart.update();
+    }, 35000);
+</script>
 
     <style>
-        .ClusterInfo {
-            font-family: arial, sans-serif;
-            border-collapse: collapse;
-            width: 25%;
-            border: 1px solid black;
-            text-align: center;
+        .chart-container-rt {
+            width: 45%;
+            margin: auto;
         }
 
-        th.ClusterInfo {
-            padding: 6px;
-            background-color: #dddddd;
-        }
-
-        td.ClusterInfo {
-            padding: 3px;
-        }
-
-        tr.ClusterInfo:hover {
-            background-color: #dddddd;
-        }
-
-        .chart-container{
+        .chart-container-rt2 {
             width: 45%;
             display: inline-block;
+        }
+
+        #ClusterMemoryUtilizationRT {
+            margin: auto;
         }
     </style>
