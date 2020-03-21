@@ -3,11 +3,18 @@ using JetsonWeb.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
+using JetsonModels;
+using JetsonWeb.Data;
+using System.Linq;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+
 namespace JetsonWeb.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> logger;
+        private ClusterContext db = new ClusterContext();
 
         public HomeController(ILogger<HomeController> logger)
         {
@@ -16,7 +23,8 @@ namespace JetsonWeb.Controllers
 
         public IActionResult Index()
         {
-            return this.View();
+            var clusters = this.db.Clusters.AsNoTracking().ToList();
+            return this.View(clusters);
         }
 
         public IActionResult Privacy()

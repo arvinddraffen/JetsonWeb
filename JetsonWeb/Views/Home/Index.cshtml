@@ -1,8 +1,50 @@
-﻿@{
+﻿@model List<JetsonModels.Cluster>
+@{
     ViewData["Title"] = "Home Page";
 }
 
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <div id="SummaryTable">
+        Select a cluster to view more information. 
+        <br />
+        <table class="ClusterInfo">
+            <tr class="ClusterInfo">
+                <th class="ClusterInfo" colspan="2">Clusters</th>
+            </tr>
+            @foreach (var cluster in Model)
+            {
+                <tr class="ClusterInfo">
+                    <td class="ClusterInfo"><a href="../Utilization/ClusterUtilization?id=@Html.DisplayFor(item => cluster.Id)"> Cluster @Html.DisplayFor(item => cluster.Id) </a></td>
+                </tr>
+            }
+        </table>
+    </div>
 </div>
+
+<style>
+    .ClusterInfo {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 25%;
+        border: 1px solid black;
+        text-align: center;
+    }
+
+    th.ClusterInfo {
+        padding: 6px;
+        background-color: #dddddd;
+    }
+
+    td.ClusterInfo {
+        padding: 3px;
+    }
+
+    tr.ClusterInfo:hover {
+        background-color: #dddddd;
+    }
+
+    td a {
+        display: block;
+    }
+</style>
