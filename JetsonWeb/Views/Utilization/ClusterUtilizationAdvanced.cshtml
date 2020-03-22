@@ -1,6 +1,6 @@
-﻿@model JetsonModels.Cluster
+﻿@model JetsonWeb.Models.ClusterSummary
 @{
-    ViewData["Title"] = "Cluster Utilization";
+    ViewData["Title"] = "Cluster Utilization (Advanced View)";
 }
 
 <script type="text/javascript" src="https://www.chartjs.org/dist/2.9.3/Chart.min.js"></script>
@@ -8,16 +8,17 @@
 
 <h1>Cluster Utilization</h1>
 
-<div id="ClusterID">
-    <h4>Cluster @Html.DisplayNameFor(model => model.Id): @Html.DisplayFor(model => model.Id)</h4>
+<div id="HeaderWrapper">
+    <div id="ClusterID">
+        <h4>Cluster @Html.DisplayNameFor(model => model.Cluster.Id): @Html.DisplayFor(model => model.Cluster.Id)</h4>
+    </div>
+    <div id="Overview">
+        <a href="ClusterUtilization?id=@Html.DisplayFor(model => model.Cluster.Id)" class="prevBtn">&laquo; Overview</a>
+    </div>
     <hr />
-
 </div>
 
 <div id="ClusterPowerUtilizationRT2">
-    <div class="chart-container-rt2">
-        <canvas id="cluster-per-node-current-utilization-rt"></canvas>
-    </div>
     <div class="chart-container-rt2">
         <canvas id="cluster-per-node-voltage-utilization-rt"></canvas>
     </div>
@@ -32,11 +33,11 @@
             <th class="ClusterInfo">Node ID</th>
             <th class="ClusterInfo">IP Address</th>
         </tr>
-        @foreach (var item in Model.Nodes)
+        @foreach (var node in Model.NodeSummaries)
         {
             <tr class="ClusterInfo">
-                <td class="ClusterInfo"> @Html.DisplayFor(modelItem => item.Id) </td>
-                <td class="ClusterInfo"> @Html.DisplayFor(modelItem => item.IPAddress) </td>
+                <td class="ClusterInfo"> @Html.DisplayFor(modelItem => node.Id) </td>
+                <td class="ClusterInfo"> @Html.DisplayFor(modelItem => node.Node.IPAddress) </td>
             </tr>
         }
     </table>
@@ -49,9 +50,9 @@
         data: {
             datasets: [{
                 data: [
-                    @foreach(var node in Model.Nodes)
+                    @foreach(var node in Model.NodeSummaries)
                     {
-                        var powerData = node.Power.OrderByDescending(m => m.Timestamp).FirstOrDefault();
+                        var powerData = node.RecentPower;
                         @Html.Raw(powerData.Voltage.ToString());
                         @Html.Raw(",");
                     }
@@ -61,7 +62,7 @@
                 label: 'Per-Node Voltage Draw'
             }],
             labels: [
-                @foreach(var node in Model.Nodes)
+                @foreach(var node in Model.NodeSummaries)
                 {
                     @Html.Raw(node.Id.ToString());
                     @Html.Raw(",");
@@ -99,9 +100,12 @@
 
     window.onload = function () {
         var clusterPerNodeVoltageUtilizationRTCtx = this.document.getElementById('cluster-per-node-voltage-utilization-rt').getContext('2d');
-
         window.clusterPerNodeVoltageChart = new Chart(clusterPerNodeVoltageUtilizationRTCtx, this.clusterPerNodeVoltageUtilizationRTConfig);
     };
+
+    setInterval(function () {
+        location.reload();
+    }, 35000);
 </script>
 
 <style>
@@ -123,7 +127,7 @@
     }
 
     tr.ClusterInfo:hover {
-        background-color: #dddddd;
+        background-color: #ededed;
     }
 
     .chart-container-rt {
@@ -138,5 +142,27 @@
 
     #ClusterMemoryUtilizationRT {
         margin: auto;
+    }
+
+    #ClusterID {
+        display: inline-block;
+    }
+
+    #Overview {
+        float: right;
+        display: inline-block;
+    }
+
+    .prevBtn {
+        background-color: #f1f1f1;
+        color: black;
+        padding: 8px 16px;
+        display: inline-block;
+        text-decoration: none;
+    }
+
+    .prevBtn:hover {
+        background-color: #dddddd;
+        color: black;
     }
 </style>

@@ -1,9 +1,12 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 using JetsonModels;
 using JetsonWeb.Data;
+using JetsonWeb.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace JetsonWeb.Controllers
 {
@@ -21,15 +24,33 @@ namespace JetsonWeb.Controllers
         /// <returns>A <see cref="ViewResult"/> object of the <see cref="Cluster"/> with the specified id.</returns>
         public ActionResult ClusterUtilization(uint id)
         {
-            var cluster = this.db.Clusters.Find(id);
+            var cluster = this.db.Clusters
+                .Include(c => c.Nodes)
+                .First(c => c.Id == id);
+
             if (cluster == null)
             {
                 return this.NotFound();
             }
 
-            this.ViewData["Nodes"] = cluster.Nodes.ToList();
+            var result = new ClusterSummary()
+            {
+                Cluster = cluster,
+                NodeSummaries = new List<NodeSummary>(),
+            };
 
-            return this.View(cluster);
+            foreach (var node in cluster.Nodes)
+            {
+                result.NodeSummaries.Add(new NodeSummary()
+                {
+                    Node = node,
+                    Id = node.Id,
+                    RecentPower = this.db.PowerData.Where(e => e.GlobalNodeId == node.GlobalId).OrderByDescending(e => e.Timestamp).First(),
+                    RecentUtilization = this.db.UtilizationData.Where(e => e.GlobalNodeId == node.GlobalId).OrderByDescending(e => e.TimeStamp).First(),
+                });
+            }
+
+            return this.View(result);
         }
 
         /// <summary>
@@ -39,15 +60,33 @@ namespace JetsonWeb.Controllers
         /// <returns>A <see cref="ViewResult"/> object of the <see cref="Cluster"/> with the specified it.</returns>
         public ActionResult ClusterUtilizationAdvanced(uint id)
         {
-            var cluster = this.db.Clusters.Find(id);
+            var cluster = this.db.Clusters
+                .Include(c => c.Nodes)
+                .First(c => c.Id == id);
+
             if (cluster == null)
             {
                 return this.NotFound();
             }
 
-            this.ViewData["Nodes"] = cluster.Nodes.ToList();
+            var result = new ClusterSummary()
+            {
+                Cluster = cluster,
+                NodeSummaries = new List<NodeSummary>(),
+            };
 
-            return this.View(cluster);
+            foreach (var node in cluster.Nodes)
+            {
+                result.NodeSummaries.Add(new NodeSummary()
+                {
+                    Node = node,
+                    Id = node.Id,
+                    RecentPower = this.db.PowerData.Where(e => e.GlobalNodeId == node.GlobalId).OrderByDescending(e => e.Timestamp).First(),
+                    RecentUtilization = this.db.UtilizationData.Where(e => e.GlobalNodeId == node.GlobalId).OrderByDescending(e => e.TimeStamp).First(),
+                });
+            }
+
+            return this.View(result);
         }
     }
 }

@@ -20,6 +20,7 @@ namespace JetsonWeb.Data
         /// </summary>
         public ClusterContext()
         {
+            this.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         }
 
         /// <summary>
@@ -27,11 +28,21 @@ namespace JetsonWeb.Data
         /// </summary>
         public DbSet<Cluster> Clusters { get; set; }
 
+        public DbSet<NodePower> PowerData { get; set; }
+
+        public DbSet<NodeUtilization> UtilizationData { get; set; }
+
+        public static readonly Microsoft.Extensions.Logging.LoggerFactory _myLoggerFactory =
+            new Microsoft.Extensions.Logging.LoggerFactory(new[] {
+                new Microsoft.Extensions.Logging.Debug.DebugLoggerProvider(),
+            });
+
         /// <inheritdoc/>
         /// <param name="options"></param>
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
-            options.UseLazyLoadingProxies().UseSqlite("DataSource=data.db");
+            options.
+                UseSqlite("DataSource=data.db");
         }
 
         /// <inheritdoc/>
@@ -43,6 +54,14 @@ namespace JetsonWeb.Data
                 .HasConversion(
                     v => JsonConvert.SerializeObject(v),
                     v => JsonConvert.DeserializeObject<ICollection<CpuCore>>(v));
+
+            // Index on NodeUtilization to speedup lookups
+            modelBuilder.Entity<NodeUtilization>()
+                .HasIndex(x => x.GlobalNodeId);
+
+            // Index on NodePower to speedup lookups
+            modelBuilder.Entity<NodePower>()
+                .HasIndex(x => x.GlobalNodeId);
         }
     }
 }
