@@ -1,0 +1,202 @@
+﻿@model JetsonWeb.Models.ClusterSummaryHistorical
+@{
+    ViewBag.Title = "Cluster Utilization (Historical)";
+}
+
+<script type="text/javascript" src="https://www.chartjs.org/dist/2.9.3/Chart.min.js"></script>
+<script type="text/javascript" src="https://www.chartjs.org/samples/latest/utils.js"></script>
+
+<h1>Cluster Utilization Historical</h1>
+
+<div id="HeaderWrapper">
+    <div id="ClusterID">
+        <h4>Cluster @Html.DisplayNameFor(model => model.Cluster.Id): @Html.DisplayFor(model => model.Cluster.Id)</h4>
+    </div>
+    <div id="AdvancedOptions">
+        <div class="dropdown">
+            <button class="dropbtn">@ViewBag.RangeString</button>
+            <div class="dropdown-content">
+                <a href="ClusterUtilizationHistorical?id=@Html.DisplayFor(model => model.Cluster.Id)&timeRange=hour">Past Hour</a>
+                <a href="ClusterUtilizationHistorical?id=@Html.DisplayFor(model => model.Cluster.Id)&timeRange=day">Past Day</a>
+                <a href="ClusterUtilizationHistorical?id=@Html.DisplayFor(model => model.Cluster.Id)&timeRange=week">Past Week</a>
+            </div>
+        </div>
+        <div id="OverviewBtn">
+            <a href="ClusterUtilization?id=@Html.DisplayFor(model => model.Cluster.Id)" class="prevBtn">&laquo; Overview</a>
+        </div>
+    </div>
+    <hr />
+</div>
+
+<div id="ClusterPowerUtilizationRT2">
+    <div class="chart-container-rt2">
+        <canvas id="cluster-power-usage-historical"></canvas>
+    </div>
+    <div class="chart-container-rt2">
+        <canvas id="cluster-per-node-cpu-usage-rt"></canvas>
+    </div>
+</div>
+
+<script>
+    var clusterPowerUsageHistoricalConfig = {
+        type: 'line',
+        data: {
+            datasets: [{
+                data: [
+                    @{
+                        List<DateTime> labels = new List<DateTime>();
+                        for (int i = 0; i < ViewBag.PowerDataCount; i++)
+                        {
+                            float totalPower = 0;
+                            foreach (var node in Model.NodesSummariesHistorical)
+                            {
+                                totalPower += node.HistoricalPower[i].Power;
+                            }
+                            labels.Add(Model.NodesSummariesHistorical.First().HistoricalPower[i].Timestamp);
+                            @Html.Raw(totalPower);
+                            @Html.Raw(",");
+                        }
+                    }
+                ],
+                label: 'Power Usage (W)',
+                backgroundColor: window.chartColors.red,
+                borderColor: window.chartColors.red,
+                fill: false,
+            }],
+            labels: [
+                @{
+                    foreach(var label in labels)
+                    {
+                        @Html.Raw("\"" + label.ToString() + "\"");
+                        @Html.Raw(",");
+                    }
+                }
+            ],
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Power Usage (W)'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Time'
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 20
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Power (W)'
+                        }
+                    }]
+                }
+            }
+        }
+    };
+
+    window.onload = function () {
+        var clusterPowerUsageHistoricalCtx = this.document.getElementById('cluster-power-usage-historical').getContext('2d');
+        window.clusterPowerUsageHistoricalChart = new Chart(clusterPowerUsageHistoricalCtx, this.clusterPowerUsageHistoricalConfig)
+    }
+</script>
+
+<style>
+    .chart-container-rt {
+        width: 45%;
+        margin: auto;
+    }
+
+    .chart-container-rt2 {
+        width: 100%;
+        display: inline-block;
+    }
+
+    #ClusterMemoryUtilizationRT {
+        margin: auto;
+    }
+
+    #ClusterID {
+        display: inline-block;
+    }
+
+    #AdvancedOptions {
+        float: right;
+        display: block;
+    }
+
+    #OverviewBtn {
+        float: right;
+        display: inline-block;
+    }
+
+    .prevBtn {
+        background-color: #f1f1f1;
+        color: black;
+        padding: 8px 16px;
+        display: inline-block;
+        text-decoration: none;
+    }
+
+        .prevBtn:hover {
+            background-color: #dddddd;
+            color: black;
+        }
+
+    .dropbtn {
+        background-color: #f1f1f1;
+        color: black;
+        padding: 9px 14px;
+        min-width: 100px;
+        font-size: 16px;
+        border: none;
+    }
+
+    .dropdown {
+        position: relative;
+        display: inline-block;
+        margin-right: 5px;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f1f1f1;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+    }
+
+        .dropdown-content a {
+            color: black;
+            padding: 9px 12px;
+            text-decoration: none;
+            display: block;
+        }
+
+            .dropdown-content a:hover {
+                background-color: #ddd;
+            }
+
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+
+    .dropdown:hover .dropbtn {
+        background-color: #949494;
+    }
+</style>
