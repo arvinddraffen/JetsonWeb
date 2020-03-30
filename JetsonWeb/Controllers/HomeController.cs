@@ -27,7 +27,7 @@ namespace JetsonWeb.Controllers
             return this.View(clusters);
         }
 
-        public IActionResult Privacy()
+        public IActionResult About()
         {
             return this.View();
         }
