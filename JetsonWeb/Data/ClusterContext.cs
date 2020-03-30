@@ -43,7 +43,7 @@ namespace JetsonWeb.Data
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
             options
-               // .UseLoggerFactory(_myLoggerFactory)
+                //.UseLoggerFactory(_myLoggerFactory)
                 .UseSqlite("DataSource=data.db");
         }
 
@@ -90,23 +90,26 @@ namespace JetsonWeb.Data
         /// <param name="modelBuilder"></param>
         private void SetupValueConversions(ModelBuilder modelBuilder)
         {
+            //modelBuilder.Entity<NodeUtilization>()
+            //  .Property(x => x.Cores)
+            //  .HasConversion(
+            //      v => JsonConvert.SerializeObject(v),
+            //      v => JsonConvert.DeserializeObject<ICollection<CpuCore>>(v));
 
             // Setup value conversion for CpuCore since CPU cores don't need primary keys
             modelBuilder.Entity<NodeUtilization>()
                 .Property(x => x.Cores)
-                .HasConversion(
-                    v => JsonConvert.SerializeObject(v),
-                    v => JsonConvert.DeserializeObject<ICollection<CpuCore>>(v));
+                .HasConversion(new CpuCoreToStringConverter());
 
             // Store Timestamps as Integer type in SQLite, not TEXT.
             // Human readability is not critical, but ordering and lookup speed by relative time is.
             modelBuilder.Entity<NodeUtilization>()
                 .Property(x => x.TimeStamp)
-                .HasConversion(new DateTimeToBinaryConverter());
+                .HasConversion(new DateTimeToTicksConverter());
 
             modelBuilder.Entity<NodePower>()
                 .Property(x => x.Timestamp)
-                .HasConversion(new DateTimeToBinaryConverter());
+                .HasConversion(new DateTimeToTicksConverter());
         }
 
         /// <summary>

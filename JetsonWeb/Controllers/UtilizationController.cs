@@ -16,8 +16,8 @@ namespace JetsonWeb.Controllers
     /// </summary>
     public class UtilizationController : Controller
     {
+        private const uint REPORTINGINTERVAL = 10;     // reporting interval in seconds
         private ClusterContext db = new ClusterContext();
-
         /// <summary>
         /// Utilization/ClusterUtilization.
         /// </summary>
@@ -77,6 +77,8 @@ namespace JetsonWeb.Controllers
             //    });
             //}
 
+            this.ViewData["ReportingInterval"] = REPORTINGINTERVAL;
+
             return this.View(result);
         }
 
@@ -125,6 +127,8 @@ namespace JetsonWeb.Controllers
                     RecentUtilization = recentUtilizationAll.First(e => e.GlobalNodeId == node.GlobalId),
                 });
             }
+
+            this.ViewData["ReportingInterval"] = REPORTINGINTERVAL;
 
             return this.View(result);
         }
@@ -180,20 +184,66 @@ namespace JetsonWeb.Controllers
                     break;
             }
 
+            // Setup nodes
             foreach (var node in cluster.Nodes)
             {
                 result.NodesSummariesHistorical.Add(new NodesSummaryHistorical()
                 {
                     Node = node,
                     Id = node.Id,
-                    HistoricalPower = this.db.PowerData.Where(e => e.Timestamp >= start && e.Timestamp <= end).OrderByDescending(e => e.Timestamp).Take(100).ToList(),
-                    HistoricalUtilization = this.db.UtilizationData.Where(e => e.TimeStamp >= start && e.TimeStamp <= end).OrderByDescending(e => e.TimeStamp).Take(100).ToList(),
+                    HistoricalPower = new List<NodePower>(),
+                    HistoricalUtilization = new List<NodeUtilization>(),
                 });
             }
 
+            // Load all data points that occured at each interval.
+            // Select a point from that interval for each node, and append it into the Historical... list.
+            const int numberOfDataPoints = 100;
+
+            var intervals = this.GenerateEvenIntervals(start, end, numberOfDataPoints);
+            intervals.Add(DateTime.Now); // ensure the last data point is current if possible
+
+            foreach (var interval in intervals)
+            {
+                var lowerInterval = interval.AddSeconds(-REPORTINGINTERVAL);
+                var upperInterval = interval.AddSeconds(REPORTINGINTERVAL);
+
+                var powerEntries = this.db.PowerData
+                    .Where(e => e.Timestamp >= lowerInterval && e.Timestamp <= upperInterval)
+                    .ToList();
+
+                var utilizationEntries = this.db.UtilizationData
+                    .Where(e => e.TimeStamp >= lowerInterval && e.TimeStamp <= upperInterval)
+                    .ToList();
+
+                if (powerEntries.Any() && utilizationEntries.Any())
+                {
+                    // TODO, maybe check for the case where one or more nodes don't have a datapoint at this interval.
+                    foreach (var nodeSummary in result.NodesSummariesHistorical)
+                    {
+                        nodeSummary.HistoricalPower.Add(powerEntries.First(x => x.GlobalNodeId == nodeSummary.Node.GlobalId));
+                        nodeSummary.HistoricalUtilization.Add(utilizationEntries.First(x => x.GlobalNodeId == nodeSummary.Node.GlobalId));
+                    }
+                }
+            }
+
             this.ViewBag.PowerDataCount = result.NodesSummariesHistorical.First().HistoricalPower.Count();
+            this.ViewBag.ReportingInterval = REPORTINGINTERVAL;
 
             return this.View(result);
+        }
+
+        private List<DateTime> GenerateEvenIntervals(DateTime start, DateTime end, int intervalCount)
+        {
+            var range = end.Subtract(start);
+            var intervalLength = range.Ticks / intervalCount;
+
+            var samplingIntervals = Enumerable
+                .Range(0, intervalCount)
+                .Select(i => start.AddTicks(i * intervalLength))
+                .ToList();
+
+            return samplingIntervals;
         }
     }
 }
