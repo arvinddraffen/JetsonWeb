@@ -16,8 +16,14 @@ namespace JetsonWeb.Controllers
     /// </summary>
     public class UtilizationController : Controller
     {
-        private const uint REPORTINGINTERVAL = 10;     // reporting interval in seconds
-        private ClusterContext db = new ClusterContext();
+        private readonly ClusterContext db;
+        private uint REPORTINGINTERVAL;     // reporting interval in seconds
+
+        public UtilizationController(ClusterContext dbContext)
+        {
+            this.db = dbContext;
+        }
+
         /// <summary>
         /// Utilization/ClusterUtilization.
         /// </summary>
@@ -39,6 +45,8 @@ namespace JetsonWeb.Controllers
                 Cluster = cluster,
                 NodeSummaries = new List<NodeSummary>(),
             };
+
+            this.REPORTINGINTERVAL = (uint)cluster.RefreshRate.TotalSeconds;
 
             // Since Utilization and Power statistics are already indexed by Timestamp, retreiving
             // the most recent n-entries is very efficient. Scanning them in-memory to find the most
@@ -77,7 +85,7 @@ namespace JetsonWeb.Controllers
             //    });
             //}
 
-            this.ViewData["ReportingInterval"] = REPORTINGINTERVAL;
+            this.ViewData["ReportingInterval"] = this.REPORTINGINTERVAL;
 
             return this.View(result);
         }
@@ -104,6 +112,8 @@ namespace JetsonWeb.Controllers
                 NodeSummaries = new List<NodeSummary>(),
             };
 
+            this.REPORTINGINTERVAL = (uint)cluster.RefreshRate.TotalSeconds;
+
             // Since Utilization and Power statistics are already indexed by Timestamp, retreiving
             // the most recent n-entries is very efficient. Scanning them in-memory to find the most
             // recent for each node ID is faster than taking round-trips the database.
@@ -128,7 +138,7 @@ namespace JetsonWeb.Controllers
                 });
             }
 
-            this.ViewData["ReportingInterval"] = REPORTINGINTERVAL;
+            this.ViewData["ReportingInterval"] = this.REPORTINGINTERVAL;
 
             return this.View(result);
         }
@@ -155,6 +165,8 @@ namespace JetsonWeb.Controllers
                 Cluster = cluster,
                 NodesSummariesHistorical = new List<NodesSummaryHistorical>(),
             };
+
+            this.REPORTINGINTERVAL = (uint)cluster.RefreshRate.TotalSeconds;
 
             DateTime start, end;
 
@@ -205,8 +217,8 @@ namespace JetsonWeb.Controllers
 
             foreach (var interval in intervals)
             {
-                var lowerInterval = interval.AddSeconds(-REPORTINGINTERVAL);
-                var upperInterval = interval.AddSeconds(REPORTINGINTERVAL);
+                var lowerInterval = interval.AddSeconds(-this.REPORTINGINTERVAL);
+                var upperInterval = interval.AddSeconds(this.REPORTINGINTERVAL);
 
                 var powerEntries = this.db.PowerData
                     .Where(e => e.Timestamp >= lowerInterval && e.Timestamp <= upperInterval)
@@ -228,7 +240,7 @@ namespace JetsonWeb.Controllers
             }
 
             this.ViewBag.PowerDataCount = result.NodesSummariesHistorical.First().HistoricalPower.Count();
-            this.ViewBag.ReportingInterval = REPORTINGINTERVAL;
+            this.ViewBag.ReportingInterval = this.REPORTINGINTERVAL;
 
             return this.View(result);
         }
