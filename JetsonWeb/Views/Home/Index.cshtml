@@ -7,44 +7,75 @@
     <h1 class="display-4">Welcome</h1>
     <div id="SummaryTable">
         Select a cluster to view more information. 
-        <br />
-        <table class="ClusterInfo">
-            <tr class="ClusterInfo">
-                <th class="ClusterInfo" colspan="2">Clusters</th>
-            </tr>
+        <br /><br />
+
+        <div class="cluster-outer-wrapper">
             @foreach (var cluster in Model)
             {
-                <tr class="ClusterInfo">
-                    <td class="ClusterInfo"><a href="../Utilization/ClusterUtilization?id=@Html.DisplayFor(item => cluster.Id)"> Cluster @Html.DisplayFor(item => cluster.Id) </a></td>
-                </tr>
+                <div class="col-xl-3 col-md-4">
+                    <a href="../Utilization/ClusterUtilization?id=@Html.DisplayFor(item => cluster.Id)" class="card-cluster">
+                        <div class="card">
+                            @switch (cluster.Type)
+                            {
+                                case JetsonModels.Cluster.ClusterType.RaspberryPi:
+                                    <img class="card-img-top" src="../../Images/RaspberryPi.png" alt="Cluster Image" style="width:100%; max-height: 100%" />
+                                    <h6 class="card-title">Cluster #@cluster.Id: @cluster.ClusterName</h6>
+                                    <p class="card-text">View Utilization Stats for Cluster @cluster.Id</p>
+                                    break;
+                                case JetsonModels.Cluster.ClusterType.Jetson:
+                                    <img class="card-img-top" src="~/Images/Jetson.png" alt="Cluster Image" style="width:100%; max-height: 100%" />
+                                    <h6 class="card-title">Cluster #@cluster.Id: @cluster.ClusterName</h6>
+                                    <p class="card-text">View Utilization Stats for Cluster @cluster.Id</p>
+                                    break;
+                                case JetsonModels.Cluster.ClusterType.Odroid:
+                                    <img class="card-img-top" src="../../Images/Odroid.png" alt="Cluster Image" style="width:100%; max-height: 100%" />
+                                    <h6 class="card-title">Cluster #@cluster.Id: @cluster.ClusterName</h6>
+                                    <p class="card-text">View Utilization Stats for Cluster @cluster.Id</p>
+                                    break;
+                                case JetsonModels.Cluster.ClusterType.GenericX86:
+                                    <img class="card-img-top" src="../../Images/GenericX86.png" alt="Cluster Image" style="width:100%; max-height: 100%" />
+                                    <h6 class="card-title">Cluster #@cluster.Id: @cluster.ClusterName</h6>
+                                    <p class="card-text">View Utilization Stats for Cluster @cluster.Id</p>
+                                    break;
+                                case JetsonModels.Cluster.ClusterType.GenericARM:
+                                    <img class="card-img-top" src="../../Images/GenericARM.png" alt="Cluster Image" style="width:100%; max-height: 100%" />
+                                    <h6 class="card-title">Cluster #@cluster.Id: @cluster.ClusterName</h6>
+                                    <p class="card-text">View Utilization Stats for Cluster @cluster.Id</p>
+                                    break;
+                                case JetsonModels.Cluster.ClusterType.Other:
+                                default:
+                                    <img class="card-img-top" src="../../Images/Other.png" alt="Cluster Image" style="width:100%; max-height: 100%" />
+                                    <h6 class="card-title">Cluster #@cluster.Id: @cluster.ClusterName</h6>
+                                    <p class="card-text">View Utilization Stats for Cluster @cluster.Id</p>
+                                    break;
+                            }
+                        </div>
+                    </a>
+                </div>
             }
-        </table>
+        </div>
     </div>
 </div>
 
 <style>
-    .ClusterInfo {
-        font-family: arial, sans-serif;
-        border-collapse: collapse;
-        width: 25%;
-        border: 1px solid black;
-        text-align: center;
+#SummaryTable{
+        margin: auto;
+                        }
+
+    .cluster-outer-wrapper{
+        margin: auto;
     }
 
-    th.ClusterInfo {
-        padding: 6px;
-        background-color: #dddddd;
+    .col-xl-3,
+    .col-md-4{
+        width: 34%;
+        display: inline-block;
+        padding-bottom: 50px;
     }
 
-    td.ClusterInfo {
-        padding: 3px;
-    }
-
-    tr.ClusterInfo:hover {
-        background-color: #ededed;
-    }
-
-    td a {
-        display: block;
+    a.card-cluster,
+    a.card-cluster:hover{
+        color: black;
+        text-decoration: none;
     }
 </style>
