@@ -6,16 +6,17 @@
 <script type="text/javascript" src="https://www.chartjs.org/dist/2.9.3/Chart.min.js"></script>
 <script type="text/javascript" src="https://www.chartjs.org/samples/latest/utils.js"></script>
 
-<h1>Cluster Utilization (Advanced View)</h1>
+<h3>Cluster Utilization (Advanced View)</h3>
 
 <div id="HeaderWrapper">
     <div id="ClusterID">
-        <h4>Cluster @Html.DisplayNameFor(model => model.Cluster.Id): @Html.DisplayFor(model => model.Cluster.Id)</h4>
+        <h5>Cluster @Html.DisplayNameFor(model => model.Cluster.Id): @Html.DisplayFor(model => model.Cluster.Id)</h5>
+        <p>Last Updated: @ViewData["LastUpdated"]</p>
     </div>
     <div id="Overview">
         <a href="ClusterUtilization?id=@Html.DisplayFor(model => model.Cluster.Id)" class="prevBtn">&laquo; Overview</a>
     </div>
-    <hr />
+    <hr class="divider" />
 </div>
 
 <div id="ClusterPowerUtilizationRT2">
@@ -164,5 +165,19 @@
     .prevBtn:hover {
         background-color: #dddddd;
         color: black;
+    }
+
+    .divider {
+        margin-top: 0.5em;
+        margin-bottom: 0.5em;
+    }
+
+    p {
+        margin: 0px;
+        padding: 0px;
+    }
+
+    h3, h5 {
+        margin-bottom: 0.05em;
     }
 </style>

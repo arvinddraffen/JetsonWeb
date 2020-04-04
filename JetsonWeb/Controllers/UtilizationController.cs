@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 using JetsonModels;
-using JetsonWeb.Data;
+using JetsonModels.Context;
 using JetsonWeb.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -86,6 +86,7 @@ namespace JetsonWeb.Controllers
             //}
 
             this.ViewData["ReportingInterval"] = this.REPORTINGINTERVAL;
+            this.ViewData["LastUpdated"] = DateTime.Now;
 
             return this.View(result);
         }
@@ -139,6 +140,7 @@ namespace JetsonWeb.Controllers
             }
 
             this.ViewData["ReportingInterval"] = this.REPORTINGINTERVAL;
+            this.ViewData["LastUpdated"] = DateTime.Now;
 
             return this.View(result);
         }
@@ -240,7 +242,9 @@ namespace JetsonWeb.Controllers
             }
 
             this.ViewBag.PowerDataCount = result.NodesSummariesHistorical.First().HistoricalPower.Count();
+            this.ViewBag.UtilizationDataCount = result.NodesSummariesHistorical.First().HistoricalUtilization.Count();
             this.ViewBag.ReportingInterval = this.REPORTINGINTERVAL;
+            this.ViewData["LastUpdated"] = DateTime.Now;
 
             return this.View(result);
         }

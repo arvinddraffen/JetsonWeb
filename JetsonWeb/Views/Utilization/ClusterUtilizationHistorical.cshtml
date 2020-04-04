@@ -6,11 +6,12 @@
 <script type="text/javascript" src="https://www.chartjs.org/dist/2.9.3/Chart.min.js"></script>
 <script type="text/javascript" src="https://www.chartjs.org/samples/latest/utils.js"></script>
 
-<h1>Cluster Utilization Historical</h1>
+<h3>Cluster Utilization Historical</h3>
 
 <div id="HeaderWrapper">
     <div id="ClusterID">
-        <h4>Cluster @Html.DisplayNameFor(model => model.Cluster.Id): @Html.DisplayFor(model => model.Cluster.Id)</h4>
+        <h5>Cluster @Html.DisplayNameFor(model => model.Cluster.Id): @Html.DisplayFor(model => model.Cluster.Id)</h5>
+        <p>Last Updated: @ViewData["LastUpdated"]</p>
     </div>
     <div id="AdvancedOptions">
         <div class="dropdown">
@@ -33,7 +34,7 @@
         <canvas id="cluster-power-usage-historical"></canvas>
     </div>
     <div class="chart-container-rt2">
-        <canvas id="cluster-per-node-cpu-usage-rt"></canvas>
+        <canvas id="cluster-memory-usage-historical"></canvas>
     </div>
 </div>
 
@@ -44,7 +45,7 @@
             datasets: [{
                 data: [
                     @{
-                        List<DateTime> labels = new List<DateTime>();
+                        List<DateTime> powerLabels = new List<DateTime>();
                         for (int i = 0; i < ViewBag.PowerDataCount; i++)
                         {
                             float totalPower = 0;
@@ -52,22 +53,22 @@
                             {
                                 totalPower += node.HistoricalPower[i].Power;
                             }
-                            labels.Add(Model.NodesSummariesHistorical.First().HistoricalPower[i].Timestamp);
+                            powerLabels.Add(Model.NodesSummariesHistorical.First().HistoricalPower[i].Timestamp);
                             @Html.Raw(totalPower);
                             @Html.Raw(",");
                         }
                     }
                 ],
                 label: 'Power Usage (W)',
-                backgroundColor: window.chartColors.red,
-                borderColor: window.chartColors.red,
+                backgroundColor: window.chartColors.orange,
+                borderColor: window.chartColors.orange,
                 fill: false,
             }],
             labels: [
                 @{
-                    foreach(var label in labels)
+                    foreach(var powerLabel in powerLabels)
                     {
-                        @Html.Raw("\"" + label.ToString() + "\"");
+                        @Html.Raw("\"" + powerLabel.ToString() + "\"");
                         @Html.Raw(",");
                     }
                 }
@@ -103,6 +104,92 @@
                         scaleLabel: {
                             display: true,
                             labelString: 'Power (W)'
+                        },
+                        ticks: {
+                            min: 0
+                        }
+                    }]
+                }
+            }
+        }
+    };
+
+    var clusterMemoryUsageHistoricalConfig = {
+        type: 'line',
+        data: {
+            datasets: [{
+                data: [
+                    @{
+                        List<DateTime> memoryLabels = new List<DateTime>();
+                        float totalMemory = 0;
+                        for (int i = 0; i < ViewBag.UtilizationDataCount; i++)
+                        {
+                            float totalPower = 0;
+                            float totalMemoryUsed = 0;
+                            foreach (var node in Model.NodesSummariesHistorical)
+                            {
+                                totalPower += node.HistoricalPower[i].Power;
+                                totalMemoryUsed += node.HistoricalUtilization[i].MemoryUsed;
+                                if (i == 0)
+                                {
+                                    totalMemory += totalMemoryUsed + node.HistoricalUtilization[i].MemoryAvailable;
+                                }
+                            }
+                            memoryLabels.Add(Model.NodesSummariesHistorical.First().HistoricalUtilization[i].TimeStamp);
+                            @Html.Raw(totalMemoryUsed);
+                            @Html.Raw(",");
+                        }
+                    }
+                ],
+                label: 'Memory Usage (MB)',
+                backgroundColor: window.chartColors.red,
+                borderColor: window.chartColors.red,
+                fill: false,
+            }],
+            labels: [
+                @{
+                    foreach(var memoryLabel in memoryLabels)
+                    {
+                        @Html.Raw("\"" + memoryLabel.ToString() + "\"");
+                        @Html.Raw(",");
+                    }
+                }
+            ],
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Memory Usage (MB)'
+                },
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                hover: {
+                    mode: 'nearest',
+                    intersect: true
+                },
+                scales: {
+                    xAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Time'
+                        },
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 20
+                        }
+                    }],
+                    yAxes: [{
+                        display: true,
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Memory (MB)'
+                        },
+                        ticks: {
+                            min: 0,
+                            max: @totalMemory
                         }
                     }]
                 }
@@ -112,7 +199,9 @@
 
     window.onload = function () {
         var clusterPowerUsageHistoricalCtx = this.document.getElementById('cluster-power-usage-historical').getContext('2d');
-        window.clusterPowerUsageHistoricalChart = new Chart(clusterPowerUsageHistoricalCtx, this.clusterPowerUsageHistoricalConfig)
+        var clusterMemoryUsageHistoricalCtx = this.document.getElementById('cluster-memory-usage-historical').getContext('2d');
+        window.clusterPowerUsageHistoricalChart = new Chart(clusterPowerUsageHistoricalCtx, this.clusterPowerUsageHistoricalConfig);
+        window.clusterMemoryUsageHistoricalChart = new Chart(clusterMemoryUsageHistoricalCtx, this.clusterMemoryUsageHistoricalConfig);
     }
 </script>
 
@@ -123,11 +212,12 @@
     }
 
     .chart-container-rt2 {
-        width: 100%;
+        width: 67%;
         display: inline-block;
+        margin: auto;
     }
 
-    #ClusterMemoryUtilizationRT {
+    #ClusterPowerUtilizationRT2 {
         margin: auto;
     }
 
@@ -181,16 +271,16 @@
         z-index: 1;
     }
 
-        .dropdown-content a {
-            color: black;
-            padding: 9px 12px;
-            text-decoration: none;
-            display: block;
-        }
+    .dropdown-content a {
+        color: black;
+        padding: 9px 12px;
+        text-decoration: none;
+        display: block;
+    }
 
-            .dropdown-content a:hover {
-                background-color: #ddd;
-            }
+    .dropdown-content a:hover {
+        background-color: #ddd;
+    }
 
     .dropdown:hover .dropdown-content {
         display: block;
@@ -198,5 +288,9 @@
 
     .dropdown:hover .dropbtn {
         background-color: #949494;
+    }
+
+    h3, h5 {
+        margin-bottom: 0.05em;
     }
 </style>

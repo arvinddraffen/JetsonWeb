@@ -6,17 +6,18 @@
 <script type="text/javascript" src="https://www.chartjs.org/dist/2.9.3/Chart.min.js"></script>
 <script type="text/javascript" src="https://www.chartjs.org/samples/latest/utils.js"></script>
 
-<h1>Cluster Utilization</h1>
+<h3>Cluster Utilization</h3>
 
 <div id="HeaderWrapper">
     <div id="ClusterID">
-        <h4>Cluster @Html.DisplayNameFor(model => model.Cluster.Id): @Html.DisplayFor(model => model.Cluster.Id)</h4>
+        <h5>Cluster @Html.DisplayNameFor(model => model.Cluster.Id): @Html.DisplayFor(model => model.Cluster.Id)</h5>
+        <p>Last Updated: @ViewData["LastUpdated"]</p>
     </div>
     <div id="AdvancedOptions">
         <a href="ClusterUtilizationHistorical?id=@Html.DisplayFor(model => model.Cluster.Id)" class="nextBtn">Historical</a>
         <a href="ClusterUtilizationAdvanced?id=@Html.DisplayFor(model => model.Cluster.Id)" class="nextBtn">Advanced &raquo;</a>
     </div>
-    <hr />
+    <hr class="divider" />
 </div>
 
 <div id="ClusterMemoryUtilizationRT">
@@ -28,6 +29,7 @@
     <div class="chart-container-rt2">
         <canvas id="cluster-per-node-memory-utilization-rt"></canvas>
     </div>
+    <div class="div-divider"></div>
     <div class="chart-container-rt2">
         <canvas id="cluster-per-node-cpu-usage-rt"></canvas>
     </div>
@@ -36,6 +38,7 @@
     <div class="chart-container-rt2">
         <canvas id="cluster-per-node-current-utilization-rt"></canvas>
     </div>
+    <div class="div-divider"></div>
     <div class="chart-container-rt2">
         <canvas id="cluster-per-node-power-utilization-rt"></canvas>
     </div>
@@ -340,13 +343,14 @@
 
 <style>
     .chart-container-rt {
-        width: 45%;
+        width: 40%;
         margin: auto;
     }
 
     .chart-container-rt2 {
-        width: 45%;
+        width: 41.7%;
         display: inline-block;
+        margin: auto;
     }
 
     #ClusterMemoryUtilizationRT {
@@ -360,6 +364,7 @@
     #AdvancedOptions {
         float: right;
         display: block;
+        vertical-align: bottom;
     }
 
     .nextBtn {
@@ -370,8 +375,27 @@
         text-decoration: none;
     }
 
-        .nextBtn:hover {
-            background-color: #dddddd;
-            color: black;
-        }
+    .nextBtn:hover {
+        background-color: #dddddd;
+        color: black;
+    }
+
+    .divider {
+        margin-top: 0.2em;
+        margin-bottom: 0.2em;
+    }
+
+    p {
+        margin: 0px;
+        padding: 0px;
+    }
+
+    h3, h5 {
+        margin-bottom: 0.05em;
+    }
+
+    .div-divider {
+        display: inline-block;
+        width: 15%;
+    }
 </style>

@@ -4,21 +4,22 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
 using JetsonModels;
-using JetsonWeb.Data;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using JetsonModels.Context;
 
 namespace JetsonWeb.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> logger;
-        private ClusterContext db = new ClusterContext();
+        private readonly ClusterContext db;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, ClusterContext dbContext)
         {
             this.logger = logger;
+            this.db = dbContext;
         }
 
         public IActionResult Index()
