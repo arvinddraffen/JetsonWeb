@@ -124,11 +124,9 @@
                         float totalMemory = 0;
                         for (int i = 0; i < ViewBag.UtilizationDataCount; i++)
                         {
-                            float totalPower = 0;
                             float totalMemoryUsed = 0;
                             foreach (var node in Model.NodesSummariesHistorical)
                             {
-                                totalPower += node.HistoricalPower[i].Power;
                                 totalMemoryUsed += node.HistoricalUtilization[i].MemoryUsed;
                                 if (i == 0)
                                 {
@@ -141,10 +139,30 @@
                         }
                     }
                 ],
-                label: 'Memory Usage (MB)',
+                label: 'Memory Used (MB)',
                 backgroundColor: window.chartColors.red,
                 borderColor: window.chartColors.red,
-                fill: false,
+                fill: true,
+            }, {
+                data: [
+                    @{
+                        for (int i = 0; i < ViewBag.UtilizationDataCount; i++)
+                        {
+                            float totalMemoryAvailable = 0;
+                            foreach (var node in Model.NodesSummariesHistorical)
+                            {
+                                totalMemoryAvailable += node.HistoricalUtilization[i].MemoryAvailable;
+                            }
+                            memoryLabels.Add(Model.NodesSummariesHistorical.First().HistoricalUtilization[i].TimeStamp);
+                            @Html.Raw(totalMemoryAvailable);
+                            @Html.Raw(",");
+                        }
+                    }
+                ],
+                label: 'Memory Available (MB)',
+                backgroundColor: window.chartColors.green,
+                borderColor: window.chartColors.green,
+                fill: true,
             }],
             labels: [
                 @{
@@ -172,24 +190,22 @@
                 scales: {
                     xAxes: [{
                         display: true,
+                        stacked: true,
                         scaleLabel: {
                             display: true,
                             labelString: 'Time'
                         },
-                        ticks: {
-                            autoSkip: true,
-                            maxTicksLimit: 20
-                        }
                     }],
                     yAxes: [{
                         display: true,
+                        stacked: true,
                         scaleLabel: {
                             display: true,
                             labelString: 'Memory (MB)'
                         },
                         ticks: {
                             min: 0,
-                            max: @totalMemory
+                            max: @totalMemory,
                         }
                     }]
                 }
@@ -203,6 +219,10 @@
         window.clusterPowerUsageHistoricalChart = new Chart(clusterPowerUsageHistoricalCtx, this.clusterPowerUsageHistoricalConfig);
         window.clusterMemoryUsageHistoricalChart = new Chart(clusterMemoryUsageHistoricalCtx, this.clusterMemoryUsageHistoricalConfig);
     }
+
+    setInterval(function () {
+        location.reload();
+    }, 60*1000);     // update every 60 seconds (1 minute) since this does not need to be real-time
 </script>
 
 <style>
@@ -212,7 +232,7 @@
     }
 
     .chart-container-rt2 {
-        width: 67%;
+        width: 100%;
         display: inline-block;
         margin: auto;
     }
