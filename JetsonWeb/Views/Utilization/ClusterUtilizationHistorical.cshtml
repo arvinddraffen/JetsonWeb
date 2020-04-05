@@ -36,6 +36,9 @@
     <div class="chart-container-rt2">
         <canvas id="cluster-memory-usage-historical"></canvas>
     </div>
+    <div class="chart-container-rt2">
+        <canvas id="cluster-cpu-usage-historical"></canvas>
+    </div>
 </div>
 
 <script>
@@ -190,6 +193,76 @@
         },
     }
 
+    @{
+        List<DateTime> cpuPointTimestamps = new List<DateTime>();
+        List<float> cpuUtilizationPoints = new List<float>();
+        float totalEntryCpuUsage;
+        float nodeEntryCpuUsage;
+        float entryCoreCount;
+        for (int i = 0; i < ViewBag.UtilizationDataCount; i++)
+        {
+            totalEntryCpuUsage = 0;
+            foreach (var node in Model.NodesSummariesHistorical)
+            {
+                nodeEntryCpuUsage = 0;
+                foreach(var core in node.HistoricalUtilization[i].Cores)
+                {
+                    nodeEntryCpuUsage += core.UtilizationPercentage;                      // add up utilization percentage for all cores
+                }
+                entryCoreCount = node.HistoricalUtilization[i].Cores.Count();             // number of cores in the node
+                nodeEntryCpuUsage = nodeEntryCpuUsage / entryCoreCount;                   // average CPU usage across cores within the node
+                totalEntryCpuUsage += nodeEntryCpuUsage;
+            }
+            totalEntryCpuUsage = totalEntryCpuUsage / (float)Model.Cluster.Nodes.Count();  // divide by number of nodes in the cluster (average CPU usage across cluster)
+            cpuUtilizationPoints.Add(totalEntryCpuUsage);
+            cpuPointTimestamps.Add(Model.NodesSummariesHistorical.First().HistoricalUtilization[i].TimeStamp);
+        }
+    }
+
+    var historicalCpuUtilizationData = [@string.Join(',', cpuUtilizationPoints.Select(i => i.ToString()))];
+    var historicalCpuUtilizationTimestamps = [@Html.Raw(string.Join(',', cpuPointTimestamps.Select(i => $"\"{i.ToString()}\"")))];
+
+
+    var historicalCpuChartData = {
+        labels: historicalCpuUtilizationTimestamps,
+        datasets: [
+            {
+                label: 'Average CPU Usage {%)',
+                backgroundColor: window.chartColors.blue,
+                borderColor: window.chartColors.blue,
+                fill: true,
+                data: historicalCpuUtilizationData,
+            }
+        ]
+    };
+
+    var historicalCpuChartOptions = {
+        responsive: true,
+        title: {
+            display: true,
+            text: 'Average CPU Usage (%)'
+        },
+        tooltips: {
+            mode: 'index',
+            intersect: false,
+        },
+        hover: {
+            mode: 'nearest',
+            intersect: true
+        },
+        scales: {
+            xAxes: [{
+                stacked: false,
+            }],
+            yAxes: [{
+                stacked: false,
+            }]
+        },
+        legend: {
+            display: false,
+        },
+    }
+
     window.onload = function () {
         var clusterPowerUsageHistoricalCtx = this.document.getElementById('cluster-power-usage-historical').getContext('2d');
         window.clusterPowerUsageHistoricalChart = new Chart(clusterPowerUsageHistoricalCtx, this.clusterPowerUsageHistoricalConfig);
@@ -199,6 +272,13 @@
             type: 'line',
             data: historicalMemoryChartData,
             options: historicalMemoryChartOptions,
+        });
+
+        var clusterCpuUsageHistoricalCtx = document.getElementById("cluster-cpu-usage-historical");
+        var historicalCpuChart = new Chart(clusterCpuUsageHistoricalCtx, {
+            type: 'line',
+            data: historicalCpuChartData,
+            options: historicalCpuChartOptions,
         });
     }
 
@@ -245,10 +325,10 @@
         text-decoration: none;
     }
 
-        .prevBtn:hover {
-            background-color: #dddddd;
-            color: black;
-        }
+    .prevBtn:hover {
+        background-color: #dddddd;
+        color: black;
+    }
 
     .dropbtn {
         background-color: #f1f1f1;
@@ -273,16 +353,16 @@
         z-index: 1;
     }
 
-        .dropdown-content a {
-            color: black;
-            padding: 9px 12px;
-            text-decoration: none;
-            display: block;
-        }
+    .dropdown-content a {
+        color: black;
+        padding: 9px 12px;
+        text-decoration: none;
+        display: block;
+    }
 
-            .dropdown-content a:hover {
-                background-color: #ddd;
-            }
+    .dropdown-content a:hover {
+        background-color: #ddd;
+    }
 
     .dropdown:hover .dropdown-content {
         display: block;
