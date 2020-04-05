@@ -1,4 +1,4 @@
-﻿@model List<JetsonModels.Cluster>
+﻿@model List<JetsonModels.Database.Cluster>
 @{
     ViewData["Title"] = "Home Page";
 }
@@ -17,32 +17,32 @@
                         <div class="card">
                             @switch (cluster.Type)
                             {
-                                case JetsonModels.Cluster.ClusterType.RaspberryPi:
+                                case JetsonModels.Database.Cluster.ClusterType.RaspberryPi:
                                     <img class="card-img-top" src="../../Images/RaspberryPi.png" alt="Cluster Image" style="width:100%; max-height: 100%" />
                                     <h6 class="card-title">Cluster #@cluster.Id: @cluster.ClusterName</h6>
                                     <p class="card-text">View Utilization Stats for Cluster @cluster.Id</p>
                                     break;
-                                case JetsonModels.Cluster.ClusterType.Jetson:
+                                case JetsonModels.Database.Cluster.ClusterType.Jetson:
                                     <img class="card-img-top" src="~/Images/Jetson.png" alt="Cluster Image" style="width:100%; max-height: 100%" />
                                     <h6 class="card-title">Cluster #@cluster.Id: @cluster.ClusterName</h6>
                                     <p class="card-text">View Utilization Stats for Cluster @cluster.Id</p>
                                     break;
-                                case JetsonModels.Cluster.ClusterType.Odroid:
+                                case JetsonModels.Database.Cluster.ClusterType.Odroid:
                                     <img class="card-img-top" src="../../Images/Odroid.png" alt="Cluster Image" style="width:100%; max-height: 100%" />
                                     <h6 class="card-title">Cluster #@cluster.Id: @cluster.ClusterName</h6>
                                     <p class="card-text">View Utilization Stats for Cluster @cluster.Id</p>
                                     break;
-                                case JetsonModels.Cluster.ClusterType.GenericX86:
+                                case JetsonModels.Database.Cluster.ClusterType.GenericX86:
                                     <img class="card-img-top" src="../../Images/GenericX86.png" alt="Cluster Image" style="width:100%; max-height: 100%" />
                                     <h6 class="card-title">Cluster #@cluster.Id: @cluster.ClusterName</h6>
                                     <p class="card-text">View Utilization Stats for Cluster @cluster.Id</p>
                                     break;
-                                case JetsonModels.Cluster.ClusterType.GenericARM:
+                                case JetsonModels.Database.Cluster.ClusterType.GenericARM:
                                     <img class="card-img-top" src="../../Images/GenericARM.png" alt="Cluster Image" style="width:100%; max-height: 100%" />
                                     <h6 class="card-title">Cluster #@cluster.Id: @cluster.ClusterName</h6>
                                     <p class="card-text">View Utilization Stats for Cluster @cluster.Id</p>
                                     break;
-                                case JetsonModels.Cluster.ClusterType.Other:
+                                case JetsonModels.Database.Cluster.ClusterType.Other:
                                 default:
                                     <img class="card-img-top" src="../../Images/Other.png" alt="Cluster Image" style="width:100%; max-height: 100%" />
                                     <h6 class="card-title">Cluster #@cluster.Id: @cluster.ClusterName</h6>

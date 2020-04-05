@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-using JetsonModels;
 using JetsonModels.Context;
+using JetsonModels.Database;
 using JetsonWeb.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -84,6 +84,11 @@ namespace JetsonWeb.Controllers
             //        RecentUtilization = this.db.UtilizationData.Where(e => e.GlobalNodeId == node.GlobalId).OrderByDescending(e => e.TimeStamp).First(),
             //    });
             //}
+
+            if (cluster.Nodes.Count() < 1)
+            {
+                return this.RedirectToAction("Error", "Home");
+            }
 
             this.ViewData["ReportingInterval"] = this.REPORTINGINTERVAL;
             this.ViewData["LastUpdated"] = DateTime.Now;
