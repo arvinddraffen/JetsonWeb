@@ -42,84 +42,61 @@
 </div>
 
 <script>
-    var clusterPowerUsageHistoricalConfig = {
-        type: 'line',
-        data: {
-            datasets: [{
-                data: [
-                    @{
-                        List<DateTime> powerLabels = new List<DateTime>();
-                        for (int i = 0; i < ViewBag.PowerDataCount; i++)
-                        {
-                            float totalPower = 0;
-                            foreach (var node in Model.NodesSummariesHistorical)
-                            {
-                                totalPower += node.HistoricalPower[i].Power;
-                            }
-                            powerLabels.Add(Model.NodesSummariesHistorical.First().HistoricalPower[i].Timestamp);
-                            @Html.Raw(totalPower);
-                            @Html.Raw(",");
-                        }
-                    }
-                ],
-                label: 'Power Usage (W)',
-                backgroundColor: window.chartColors.orange,
-                borderColor: window.chartColors.orange,
-                fill: false,
-            }],
-            labels: [
+    var clusterPowerUsageHistoricalData = {
+        datasets: [{
+            data: [
                 @{
-                    foreach (var powerLabel in powerLabels)
+                    List<DateTime> powerLabels = new List<DateTime>();
+                    for (int i = 0; i < ViewBag.PowerDataCount; i++)
                     {
-                        @Html.Raw("\"" + powerLabel.ToString() + "\"");
+                        float totalPower = 0;
+                        foreach (var node in Model.NodesSummariesHistorical)
+                        {
+                            totalPower += node.HistoricalPower[i].Power;
+                        }
+                        powerLabels.Add(Model.NodesSummariesHistorical.First().HistoricalPower[i].Timestamp);
+                        @Html.Raw(totalPower);
                         @Html.Raw(",");
                     }
                 }
             ],
-            options: {
-                responsive: true,
-                title: {
-                    display: true,
-                    text: 'Power Usage (W)'
-                },
-                tooltips: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                hover: {
-                    mode: 'nearest',
-                    intersect: true
-                },
-                scales: {
-                    xAxes: [{
-                        display: true,
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Time'
-                        },
-                        ticks: {
-                            autoSkip: true,
-                            maxTicksLimit: 20
-                        }
-                    }],
-                    yAxes: [{
-                        display: true,
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Power (W)'
-                        },
-                        ticks: {
-                            min: 0
-                        }
-                    }]
+            label: 'Power Usage (W)',
+            backgroundColor: window.chartColors.orange,
+            borderColor: window.chartColors.orange,
+            fill: false,
+        }],
+        labels: [
+            @{
+                foreach (var powerLabel in powerLabels)
+                {
+                    @Html.Raw("\"" + powerLabel.ToString() + "\"");
+                    @Html.Raw(",");
                 }
             }
+        ]
+    }
+
+    var clusterPowerUsageHistoricalOptions = {
+        options: {
+            responsive: true,
+            title: {
+                display: true,
+                text: 'Power Usage (W)'
+            },
+            scales: {
+                yAxes: [{
+                    display: true,
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
         }
-    };
+    }
 
     @{
-        var memoryUsedPoints = new List<uint>();
-        var memoryAvailablePoints = new List<uint>();
+        var memoryUsedPoints = new List<float>();
+        var memoryAvailablePoints = new List<float>();
         var memoryPointTimestamps = new List<DateTime>();
         var maxMemory = 0u;
 
@@ -136,11 +113,14 @@
 
             maxMemory = Math.Max(maxMemory, totalEntryMemoryUsed + totalEntryMemoryAvailable);
 
-            memoryUsedPoints.Add(totalEntryMemoryUsed);
-            memoryAvailablePoints.Add(totalEntryMemoryAvailable);
+            memoryUsedPoints.Add((float)totalEntryMemoryUsed / (float)1024);                    // represent memory in GB rather than MB
+            memoryAvailablePoints.Add((float)totalEntryMemoryAvailable / (float)1024);          // represent memory in GB rather than MB
             memoryPointTimestamps.Add(Model.NodesSummariesHistorical.First().HistoricalUtilization[i].TimeStamp);
         }
+
+        var maxMemoryGB = maxMemory / (float)1024;
     }
+
 
     var historicalMemoryUsedData = [@string.Join(',', memoryUsedPoints.Select(i => i.ToString()))];
     var historicalMemoryAvailData = [@string.Join(',', memoryAvailablePoints.Select(i => i.ToString()))];
@@ -150,14 +130,14 @@
         labels: historicalMemoryTimestamps,
         datasets: [
             {
-                label: 'Memory Used (MB)',
+                label: 'Memory Used (GB)',
                 backgroundColor: window.chartColors.red,
                 borderColor: window.chartColors.red,
                 fill: true,
                 data: historicalMemoryUsedData,
             },
             {
-                label: 'Memory Available (MB)',
+                label: 'Memory Available (GB)',
                 backgroundColor: window.chartColors.green,
                 borderColor: window.chartColors.green,
                 fill: true,
@@ -170,7 +150,7 @@
         responsive: true,
         title: {
             display: true,
-            text: 'Memory Usage (MB)'
+            text: 'Memory Usage (GB)'
         },
         tooltips: {
             mode: 'index',
@@ -186,6 +166,10 @@
             }],
             yAxes: [{
                 stacked: true,
+                ticks: {
+                    min: 0,
+                    max: @maxMemoryGB
+                }
             }]
         },
         legend: {
@@ -288,6 +272,10 @@
             }],
             yAxes: [{
                 stacked: true,
+                ticks: {
+                    min: 0,
+                    max: 100
+                }
             }]
         },
         legend: {
@@ -296,8 +284,12 @@
     }
 
     window.onload = function () {
-        var clusterPowerUsageHistoricalCtx = this.document.getElementById('cluster-power-usage-historical').getContext('2d');
-        window.clusterPowerUsageHistoricalChart = new Chart(clusterPowerUsageHistoricalCtx, this.clusterPowerUsageHistoricalConfig);
+        var clusterPowerUsageHistoricalCtx = this.document.getElementById('cluster-power-usage-historical');
+        var historicalPowerChart = new Chart(clusterPowerUsageHistoricalCtx, {
+            type: 'line',
+            data: clusterPowerUsageHistoricalData,
+            options: clusterPowerUsageHistoricalOptions,
+        });
 
         var clusterMemoryUsageHistoricalCtx = document.getElementById("cluster-memory-usage-historical");
         var historicalMemoryChart = new Chart(clusterMemoryUsageHistoricalCtx, {

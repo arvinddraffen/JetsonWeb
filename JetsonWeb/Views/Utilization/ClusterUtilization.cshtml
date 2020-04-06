@@ -59,7 +59,11 @@
                             clusterMemAvailable += utilizationData.MemoryAvailable;
                         }
                     }
-                    @clusterMemUsed, @clusterMemAvailable
+                    @{ 
+                        @Html.Raw((float)clusterMemUsed / (float)1024);
+                        @Html.Raw(",");
+                        @Html.Raw((float)clusterMemAvailable / (float)1024);
+                    }
                 ],
                 backgroundColor: [
                     window.chartColors.red,
@@ -68,8 +72,8 @@
                 label: 'Cluster Total Memory Usage'
             }],
             labels: [
-                'Memory Used (MB)',
-                'Memory Available (MB)'
+                'Memory Used (GB)',
+                'Memory Available (GB)'
             ]
         },
         options: {
@@ -79,7 +83,7 @@
             },
             title: {
                 display: true,
-                text: 'Cluster Total Memory Usage'
+                text: 'Cluster Total Memory Usage (GB)'
             },
             animation: {
                 animateScale: true,
@@ -87,6 +91,20 @@
             }
         }
     };
+
+    @{ 
+        uint maxNodeMemory = 0;
+        foreach(var node in Model.NodeSummaries)
+        {
+            uint nodeMemory = node.RecentUtilization.MemoryUsed + node.RecentUtilization.MemoryAvailable;
+            if (nodeMemory > maxNodeMemory)
+            {
+                maxNodeMemory = nodeMemory;
+            }
+        }
+
+        float maxNodeMemoryGB = (float)maxNodeMemory / (float)1024;
+    }
 
     var clusterPerNodeMemoryUtilizationRTConfig = {
         type: 'bar',
@@ -97,7 +115,7 @@
                     @foreach(var node in Model.NodeSummaries)
                     {
                         var perNodeUtil = node.RecentUtilization;
-                        @Html.Raw(perNodeUtil.MemoryUsed);
+                        @Html.Raw((float)perNodeUtil.MemoryUsed / (float)1024);           // display memory in GB rather than MB
                         @Html.Raw(",");
                     }
                 ],
@@ -109,7 +127,7 @@
                     @foreach(var node in Model.NodeSummaries)
                     {
                         var perNodeUtil = node.RecentUtilization;
-                        @Html.Raw(perNodeUtil.MemoryAvailable);
+                        @Html.Raw((float)perNodeUtil.MemoryAvailable / (float)1024);      // display memory in GB rather than MB
                         @Html.Raw(",");
                     }
                 ],
@@ -119,8 +137,7 @@
             labels: [
                 @foreach(var node in Model.NodeSummaries)
                 {
-                    @Html.Raw(node.Id.ToString());
-                    @Html.Raw(",");
+                    @Html.Raw("\"Node " + node.Id.ToString() + "\",");
                 }
             ]
         },
@@ -145,12 +162,13 @@
                     stacked: true,
                     scaleLabel: {
                         display: true,
-                        labelString: 'Memory Usage (MB)'
+                        labelString: 'Memory Usage (GB)'
                     },
                     ticks: {
                         autoSkip: true,
                         maxTicksLimit: 6,
-                        suggestedMin: 0
+                        suggestedMin: 0,
+                        max: @maxNodeMemoryGB
                     }
                 }]
             }
@@ -293,6 +311,10 @@
             }],
             yAxes: [{
                 stacked: true,
+                ticks: {
+                    min: 0,
+                    max: 100
+                }
             }]
         },
         legend: {
@@ -372,9 +394,9 @@
         });
     };
 
-    //setInterval(function () {
-    //    location.reload(true)
-    //}, @ViewData["ReportingInterval"]*1000);
+    setInterval(function () {
+        location.reload(true)
+    }, @ViewData["ReportingInterval"]*1000);
 </script>
 
 <style>
