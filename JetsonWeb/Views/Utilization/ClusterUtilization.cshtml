@@ -210,64 +210,95 @@
         }
     };
 
-    var clusterPerNodeCPUUtilizationRTConfig = {
-        type: 'bar',
-        data: {
-            datasets: [{
-                data: [
-                    @foreach(var node in Model.NodeSummaries)
-                    {
-                        var utilData = node.RecentUtilization;
-                        var cores = utilData.Cores;
-                        float avgUtilPctg = 0;
-                        foreach (var core in cores)
-                        {
-                            avgUtilPctg += core.UtilizationPercentage;
-                        }
-                        @Html.Raw(avgUtilPctg / cores.Count());
-                        @Html.Raw(",");
-                    }
-                ],
-                backgroundColor: window.chartColors.blue,
-                borderWidth: 1,
-                label: 'Per-Node Average CPU Usage'
-            }],
-            labels: [
-                @foreach(var node in Model.NodeSummaries)
-                {
-                    @Html.Raw(node.Id.ToString());
-                    @Html.Raw(",");
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            legend: {
-                position: 'top'
-            },
-            title: {
-                display: true,
-                text: 'Cluster Per-Node CPU Usage'
-            },
-            animation: {
-                animateScale: true,
-                animateRotate: true
-            },
-            scales: {
-                yAxes: [{
-                    scaleLabel: {
-                        display: true,
-                        labelString: 'CPU Usage (%)'
-                    },
-                    ticks: {
-                        autoSkip: true,
-                        maxTicksLimit: 6,
-                        suggestedMin: 0
-                    }
-                }]
+
+    @{
+        List<uint> cpuPointLabels = new List<uint>();
+        float nodeEntryCpuUsage;
+        float entryCoreCount;
+        List<float> cpuNodeUtilizationPoints = new List<float>();
+        foreach (var node in Model.NodeSummaries)
+        {
+            nodeEntryCpuUsage = 0;
+            foreach (var core in node.RecentUtilization.Cores)
+            {
+                nodeEntryCpuUsage += core.UtilizationPercentage;                      // add up utilization percentage for all cores
             }
+            entryCoreCount = node.RecentUtilization.Cores.Count();                    // number of cores in the node
+            nodeEntryCpuUsage = nodeEntryCpuUsage / entryCoreCount;                   // average CPU usage across cores within the node
+            nodeEntryCpuUsage /= Model.Cluster.Nodes.Count();
+            cpuNodeUtilizationPoints.Add(nodeEntryCpuUsage);
+            cpuPointLabels.Add(node.Id);
         }
+
+        List<string> colorList = new List<string>()
+        {
+            "rgb(255, 99, 132)",    // red
+            "rgb(255, 159, 64)",    // orange
+            "rgb(255, 205, 86)",    // yellow
+            "rgb(75, 192, 192)",    // green
+            "rgb(54, 162, 235)",    // blue
+            "rgb(153, 102, 255)",   // purple
+            "rgb(201, 203, 207)"    // grey
+        };
+    }
+
+    var cpuUtilizationLabels = [@Html.Raw(string.Join(',', cpuPointLabels))];
+
+    var clusterPerNodeCPUUtilizationRtData = {
+        labels: cpuUtilizationLabels,
+        datasets: [
+            @{
+                for (int i = 0; i < Model.Cluster.Nodes.Count(); i++)
+                {
+                    @Html.Raw('{');
+                    @Html.Raw("label: \'Average CPU Usage for Node " + i.ToString() + " (%)\',\n");
+                    @Html.Raw("backgroundColor: \'" + colorList[i % colorList.Count()] + "\',\n");
+                    @Html.Raw("borderWidth: 1,\n");
+                    @Html.Raw("data: [");
+                    foreach(var utilPoint in cpuNodeUtilizationPoints)
+                    {
+                        @Html.Raw(utilPoint.ToString());
+                        @Html.Raw(',');
+                    }
+                    @Html.Raw("\n]")
+                    @Html.Raw("}\n");
+                    if (i < Model.Cluster.Nodes.Count() - 1)
+                    {
+                        @Html.Raw(',');
+                    }
+                    @Html.Raw('\n');
+                }
+            }
+        ]
     };
+
+    var clusterPerNodeCPUUtilizationRtConfig = {
+        responsive: true,
+        title: {
+            display: true,
+            text: 'Average CPU Usage (%)'
+        },
+        tooltips: {
+            mode: 'index',
+            intersect: false,
+            yAlign: 'right'
+        },
+        hover: {
+            mode: 'nearest',
+            intersect: true
+        },
+        scales: {
+            xAxes: [{
+                stacked: true,
+            }],
+            yAxes: [{
+                stacked: true,
+            }]
+        },
+        legend: {
+            display: false,
+        },
+    }
 
      var clusterPerNodePowerUtilizationRTConfig = {
         type: 'bar',
@@ -325,20 +356,25 @@
     window.onload = function () {
         var clusterMemoryCtx = this.document.getElementById('cluster-memory-utilization').getContext('2d');
         var clusterPerNodeMemoryUtilizationRTCtx = this.document.getElementById('cluster-per-node-memory-utilization-rt').getContext('2d');
-        var clusterPerNodeCPUUsageRTCtx = this.document.getElementById('cluster-per-node-cpu-usage-rt').getContext('2d');
         var clusterPerNodeCurrentUtilizationRTCtx = this.document.getElementById('cluster-per-node-current-utilization-rt').getContext('2d');
         var clusterPerNodePowerUtilizationRTCtx = this.document.getElementById('cluster-per-node-power-utilization-rt').getContext('2d');
 
         window.clusterMemoryChart = new Chart(clusterMemoryCtx, this.clusterMemoryUtilizationRTConfig);
         window.clusterPerNodeMemoryChart = new Chart(clusterPerNodeMemoryUtilizationRTCtx, this.clusterPerNodeMemoryUtilizationRTConfig);
-        window.clusterPerNodeCPUChart = new Chart(clusterPerNodeCPUUsageRTCtx, this.clusterPerNodeCPUUtilizationRTConfig);
         window.clusterPerNodeCurrentChart = new Chart(clusterPerNodeCurrentUtilizationRTCtx, this.clusterPerNodeCurrentUtilizationRTConfig);
         window.clusterPerNodePowerChart = new Chart(clusterPerNodePowerUtilizationRTCtx, this.clusterPerNodePowerUtilizationRTConfig);
+
+        var clusterPerNodeCPUUtilizationRTCtx = this.document.getElementById('cluster-per-node-cpu-usage-rt').getContext('2d');
+        var historicalCpuChart = new Chart(clusterPerNodeCPUUtilizationRTCtx, {
+            type: 'bar',
+            data: clusterPerNodeCPUUtilizationRtData,
+            options: clusterPerNodeCPUUtilizationRtConfig,
+        });
     };
 
-    setInterval(function () {
-        location.reload(true)
-    }, @ViewData["ReportingInterval"]*1000);
+    //setInterval(function () {
+    //    location.reload(true)
+    //}, @ViewData["ReportingInterval"]*1000);
 </script>
 
 <style>

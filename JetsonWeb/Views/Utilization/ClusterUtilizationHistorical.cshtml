@@ -256,7 +256,7 @@
                         @Html.Raw("\n]")
                         @Html.Raw("}\n");
 
-                        if ((i < cpuUtilizationPoints.Count() - 1) || (cpuUtilizationPoints.Count() == 1))
+                        if ((i < Model.Cluster.Nodes.Count() - 1) || (cpuUtilizationPoints.Count() == 1))
                         {
                             @Html.Raw(',');
                         }
@@ -291,8 +291,7 @@
             }]
         },
         legend: {
-            display: true,
-            position: 'right'
+            display: false,
         },
     }
 
