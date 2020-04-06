@@ -59,7 +59,7 @@
                             clusterMemAvailable += utilizationData.MemoryAvailable;
                         }
                     }
-                    @{ 
+                    @{
                         @Html.Raw((float)clusterMemUsed / (float)1024);
                         @Html.Raw(",");
                         @Html.Raw((float)clusterMemAvailable / (float)1024);
@@ -92,7 +92,7 @@
         }
     };
 
-    @{ 
+    @{
         uint maxNodeMemory = 0;
         foreach(var node in Model.NodeSummaries)
         {
@@ -194,8 +194,7 @@
             labels: [
                 @foreach(var node in Model.NodeSummaries)
                 {
-                    @Html.Raw(node.Id.ToString());
-                    @Html.Raw(",");
+                    @Html.Raw("\'Node " + node.Id.ToString() + "\',");
                 }
             ]
         },
@@ -263,13 +262,18 @@
     var cpuUtilizationLabels = [@Html.Raw(string.Join(',', cpuPointLabels))];
 
     var clusterPerNodeCPUUtilizationRtData = {
-        labels: cpuUtilizationLabels,
+        labels: [
+            @foreach(var label in cpuPointLabels)
+            {
+                @Html.Raw("\'Node " + label + "\',");
+            }
+        ],
         datasets: [
             @{
                 for (int i = 0; i < Model.Cluster.Nodes.Count(); i++)
                 {
                     @Html.Raw('{');
-                    @Html.Raw("label: \'Average CPU Usage for Node " + i.ToString() + " (%)\',\n");
+                    @Html.Raw("label: \'Node " + i.ToString() + " (%)\',\n");
                     @Html.Raw("backgroundColor: \'" + colorList[i % colorList.Count()] + "\',\n");
                     @Html.Raw("borderWidth: 1,\n");
                     @Html.Raw("data: [");
@@ -341,8 +345,7 @@
             labels: [
                 @foreach(var node in Model.NodeSummaries)
                 {
-                    @Html.Raw(node.Id.ToString());
-                    @Html.Raw(",");
+                    @Html.Raw("\'Node " + node.Id.ToString() + "\',");
                 }
             ]
         },
