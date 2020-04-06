@@ -77,20 +77,18 @@
     }
 
     var clusterPowerUsageHistoricalOptions = {
-        options: {
-            responsive: true,
-            title: {
+        responsive: true,
+        title: {
+            display: true,
+            text: 'Power Usage (W)'
+        },
+        scales: {
+            yAxes: [{
                 display: true,
-                text: 'Power Usage (W)'
-            },
-            scales: {
-                yAxes: [{
-                    display: true,
-                    ticks: {
-                        beginAtZero: true
-                    }
-                }]
-            }
+                ticks: {
+                    beginAtZero: true
+                }
+            }]
         }
     }
 

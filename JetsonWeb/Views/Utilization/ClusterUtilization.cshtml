@@ -230,20 +230,22 @@
 
     @{
         List<uint> cpuPointLabels = new List<uint>();
-        float nodeEntryCpuUsage;
-        float entryCoreCount;
-        List<float> cpuNodeUtilizationPoints = new List<float>();
+        List<List<float>> perCoreNodeUtilizationPoints = new List<List<float>>(Model.NodeSummaries[0].RecentUtilization.Cores.Count());
+        for (int i = 0; i < Model.NodeSummaries[0].RecentUtilization.Cores.Count(); i++)
+        {
+            perCoreNodeUtilizationPoints.Add(new List<float>());
+        }
         foreach (var node in Model.NodeSummaries)
         {
-            nodeEntryCpuUsage = 0;
+            List<float> perCoreCPUUsage = new List<float>();
             foreach (var core in node.RecentUtilization.Cores)
             {
-                nodeEntryCpuUsage += core.UtilizationPercentage;                      // add up utilization percentage for all cores
+                perCoreCPUUsage.Add(core.UtilizationPercentage);
             }
-            entryCoreCount = node.RecentUtilization.Cores.Count();                    // number of cores in the node
-            nodeEntryCpuUsage = nodeEntryCpuUsage / entryCoreCount;                   // average CPU usage across cores within the node
-            nodeEntryCpuUsage /= Model.Cluster.Nodes.Count();
-            cpuNodeUtilizationPoints.Add(nodeEntryCpuUsage);
+            for (int i = 0; i < perCoreCPUUsage.Count(); i++)
+            {
+                perCoreNodeUtilizationPoints[i].Add(perCoreCPUUsage[i]);
+            }
             cpuPointLabels.Add(node.Id);
         }
 
@@ -270,14 +272,14 @@
         ],
         datasets: [
             @{
-                for (int i = 0; i < Model.Cluster.Nodes.Count(); i++)
+                for (int i = 0; i < Model.NodeSummaries[0].RecentUtilization.Cores.Count(); i++)
                 {
                     @Html.Raw('{');
                     @Html.Raw("label: \'Node " + i.ToString() + " (%)\',\n");
                     @Html.Raw("backgroundColor: \'" + colorList[i % colorList.Count()] + "\',\n");
                     @Html.Raw("borderWidth: 1,\n");
                     @Html.Raw("data: [");
-                    foreach(var utilPoint in cpuNodeUtilizationPoints)
+                    foreach(var utilPoint in perCoreNodeUtilizationPoints[i])
                     {
                         @Html.Raw(utilPoint.ToString());
                         @Html.Raw(',');
@@ -317,7 +319,7 @@
                 stacked: true,
                 ticks: {
                     min: 0,
-                    max: 100
+                    suggestedMax: 100
                 }
             }]
         },
