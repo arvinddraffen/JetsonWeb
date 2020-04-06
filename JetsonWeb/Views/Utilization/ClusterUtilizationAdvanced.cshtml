@@ -28,18 +28,22 @@
 <div id="SummaryTable">
     <table class="ClusterInfo">
         <tr class="ClusterInfo">
-            <th class="ClusterInfo" colspan="2">Node Information</th>
+            <th class="ClusterInfo" colspan="4">Node Information</th>
         </tr>
         <tr class="ClusterInfo">
             <th class="ClusterInfo">Node ID</th>
             <th class="ClusterInfo">IP Address</th>
+            <th class="ClusterInfo">Operating System</th>
+            <th class="ClusterInfo">Node Uptime</th>
         </tr>
         @foreach (var node in Model.NodeSummaries)
         {
-            <tr class="ClusterInfo">
-                <td class="ClusterInfo"> @Html.DisplayFor(modelItem => node.Id) </td>
-                <td class="ClusterInfo"> @Html.DisplayFor(modelItem => node.Node.IPAddress) </td>
-            </tr>
+    <tr class="ClusterInfo">
+        <td class="ClusterInfo"> @Html.DisplayFor(modelItem => node.Id) </td>
+        <td class="ClusterInfo"> @Html.DisplayFor(modelItem => node.Node.IPAddress) </td>
+        <td class="ClusterInfo"> @Html.DisplayFor(modelItem => node.Node.OperatingSystem) </td>
+        <td class="ClusterInfo"> @Html.DisplayFor(modelItem => node.Node.UpTime) </td>
+    </tr>
         }
     </table>
 </div>
