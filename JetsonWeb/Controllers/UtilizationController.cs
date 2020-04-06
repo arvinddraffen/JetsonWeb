@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JetsonWeb.Controllers
 {
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)] // disable caching
     /// <summary>
     /// Defines controllers for the Utilization views.
     /// </summary>

@@ -1,16 +1,16 @@
 ﻿using System.Diagnostics;
+using System.Linq;
+using JetsonModels;
+using JetsonModels.Context;
 using JetsonWeb.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-
-using JetsonModels;
-using System.Linq;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using JetsonModels.Context;
+using Microsoft.Extensions.Logging;
 
 namespace JetsonWeb.Controllers
 {
+    [ResponseCache(NoStore =true, Location =ResponseCacheLocation.None)] // disable caching
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> logger;
