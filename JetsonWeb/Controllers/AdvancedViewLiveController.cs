@@ -1,25 +1,38 @@
-﻿using JetsonModels.Context;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using JetsonModels.Context;
 using JetsonModels.Database;
 using JetsonWeb.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace JetsonWeb.Controllers
 {
+    /// <summary>
+    /// Provides data to the Advanced real-time view for the <see cref="Cluster"/> for dynamic page updating.
+    /// </summary>
     public class AdvancedViewLiveController : Controller
     {
         private readonly ClusterContext db;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="AdvancedViewLiveController"/> class.
+        /// Provides data to the advanced real-time view for the <see cref="Cluster"/> for dynamic page updating.
+        /// </summary>
+        /// <param name="dbContext">Database context by which <see cref="Cluster"/> data from the database is retrieved.</param>
         public AdvancedViewLiveController(ClusterContext dbContext)
         {
             this.db = dbContext;
         }
 
-        public ActionResult<ClusterAdvancedData> GetAdvancedClusterUtilization (uint id)
+        /// <summary>
+        /// Returns data for the real-time advanced view to allow dynamic page updating.
+        /// </summary>
+        /// <param name="id">The id of the <see cref="Cluster"/> for which to return data.</param>
+        /// <returns>A JSON encoded version of the latest <see cref="Cluster"/> data for the advanced view.</returns>
+        public ActionResult<ClusterAdvancedData> GetAdvancedClusterUtilization(uint id)
         {
             var cluster = this.db.Clusters
                 .Include(c => c.Nodes)

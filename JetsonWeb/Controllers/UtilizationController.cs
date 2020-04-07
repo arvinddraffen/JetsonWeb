@@ -11,14 +11,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace JetsonWeb.Controllers
 {
-    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)] // disable caching
     /// <summary>
     /// Defines controllers for the Utilization views.
     /// </summary>
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)] // disable caching
     public class UtilizationController : Controller
     {
         private readonly ClusterContext db;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UtilizationController"/> class.
+        /// Initializes the database context (<see cref="ClusterContext"/> to retrieve data from the database.
+        /// </summary>
+        /// <param name="dbContext">The database context by which data is retrieved from the database.</param>
         public UtilizationController(ClusterContext dbContext)
         {
             this.db = dbContext;
@@ -71,17 +76,6 @@ namespace JetsonWeb.Controllers
                     RecentUtilization = recentUtilizationAll.First(e => e.GlobalNodeId == node.GlobalId),
                 });
             }
-
-            //foreach (var node in cluster.Nodes)
-            //{
-            //    result.NodeSummaries.Add(new NodeSummary()
-            //    {
-            //        Node = node,
-            //        Id = node.Id,
-            //        RecentPower = this.db.PowerData.Where(e => e.GlobalNodeId == node.GlobalId).OrderByDescending(e => e.Timestamp).First(),
-            //        RecentUtilization = this.db.UtilizationData.Where(e => e.GlobalNodeId == node.GlobalId).OrderByDescending(e => e.TimeStamp).First(),
-            //    });
-            //}
 
             if (cluster.Nodes.Count() < 1)
             {
@@ -232,7 +226,6 @@ namespace JetsonWeb.Controllers
                 var utilizationEntries = this.db.UtilizationData
                     .Where(e => e.TimeStamp >= lowerInterval && e.TimeStamp <= upperInterval)
                     .ToList();
-
 
                 if (powerEntries.Any() && utilizationEntries.Any())
                 {
