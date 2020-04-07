@@ -18,7 +18,6 @@ namespace JetsonWeb.Controllers
     public class UtilizationController : Controller
     {
         private readonly ClusterContext db;
-        private uint REPORTINGINTERVAL;     // reporting interval in seconds
 
         public UtilizationController(ClusterContext dbContext)
         {
@@ -46,8 +45,6 @@ namespace JetsonWeb.Controllers
                 Cluster = cluster,
                 NodeSummaries = new List<NodeSummary>(),
             };
-
-            this.REPORTINGINTERVAL = (uint)cluster.RefreshRate.TotalSeconds;
 
             // Since Utilization and Power statistics are already indexed by Timestamp, retreiving
             // the most recent n-entries is very efficient. Scanning them in-memory to find the most
@@ -91,14 +88,14 @@ namespace JetsonWeb.Controllers
                 return this.RedirectToAction("Error", "Home");
             }
 
-            this.ViewData["ReportingInterval"] = this.REPORTINGINTERVAL;
+            this.ViewData["ReportingInterval"] = (uint)cluster.RefreshRate.TotalSeconds;
             this.ViewData["LastUpdated"] = DateTime.Now;
 
             return this.View(result);
         }
 
         /// <summary>
-        /// Utilization/ClusterUtilizationAdvanced
+        /// Utilization/ClusterUtilizationAdvanced.
         /// </summary>
         /// <param name="id">The unique identifier of the <see cref="Cluster"/>.</param>
         /// <returns>A <see cref="ViewResult"/> object of the <see cref="Cluster"/> with the specified id.</returns>
@@ -118,8 +115,6 @@ namespace JetsonWeb.Controllers
                 Cluster = cluster,
                 NodeSummaries = new List<NodeSummary>(),
             };
-
-            this.REPORTINGINTERVAL = (uint)cluster.RefreshRate.TotalSeconds;
 
             // Since Utilization and Power statistics are already indexed by Timestamp, retreiving
             // the most recent n-entries is very efficient. Scanning them in-memory to find the most
@@ -145,14 +140,14 @@ namespace JetsonWeb.Controllers
                 });
             }
 
-            this.ViewData["ReportingInterval"] = this.REPORTINGINTERVAL;
+            this.ViewData["ReportingInterval"] = (uint)cluster.RefreshRate.TotalSeconds;
             this.ViewData["LastUpdated"] = DateTime.Now;
 
             return this.View(result);
         }
 
         /// <summary>
-        /// /Utilization/ClusterUtilizationHistorical
+        /// /Utilization/ClusterUtilizationHistorical.
         /// </summary>
         /// <param name="id">The unique identifier of the <see cref="Cluster"/>.</param>
         /// <param name="timeRange">The time range over which to return historical data.</param>
@@ -174,7 +169,7 @@ namespace JetsonWeb.Controllers
                 NodesSummariesHistorical = new List<NodesSummaryHistorical>(),
             };
 
-            this.REPORTINGINTERVAL = (uint)cluster.RefreshRate.TotalSeconds;
+            uint reportingInterval = (uint)cluster.RefreshRate.TotalSeconds;
 
             DateTime start, end;
 
@@ -225,8 +220,8 @@ namespace JetsonWeb.Controllers
 
             foreach (var interval in intervals)
             {
-                var lowerInterval = interval.AddSeconds(-this.REPORTINGINTERVAL);
-                var upperInterval = interval.AddSeconds(this.REPORTINGINTERVAL);
+                var lowerInterval = interval.AddSeconds(-reportingInterval);
+                var upperInterval = interval.AddSeconds(reportingInterval);
 
                 var powerEntries = this.db.PowerData
                     .Where(e => e.Timestamp >= lowerInterval && e.Timestamp <= upperInterval)
@@ -249,7 +244,7 @@ namespace JetsonWeb.Controllers
 
             this.ViewBag.PowerDataCount = result.NodesSummariesHistorical.First().HistoricalPower.Count();
             this.ViewBag.UtilizationDataCount = result.NodesSummariesHistorical.First().HistoricalUtilization.Count();
-            this.ViewBag.ReportingInterval = this.REPORTINGINTERVAL;
+            this.ViewBag.ReportingInterval = reportingInterval;
             this.ViewData["LastUpdated"] = DateTime.Now;
 
             return this.View(result);

@@ -5,13 +5,14 @@
 
 <script type="text/javascript" src="https://www.chartjs.org/dist/2.9.3/Chart.min.js"></script>
 <script type="text/javascript" src="https://www.chartjs.org/samples/latest/utils.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 
 <h3>Cluster Utilization</h3>
 
 <div id="HeaderWrapper">
     <div id="ClusterID">
         <h5>Cluster @Html.DisplayNameFor(model => model.Cluster.Id): @Html.DisplayFor(model => model.Cluster.Id)</h5>
-        <p>Last Updated: @ViewData["LastUpdated"]</p>
+        <p id="last-updated">Last Updated: @ViewData["LastUpdated"]</p>
     </div>
     <div id="AdvancedOptions">
         <a href="ClusterUtilizationHistorical?id=@Html.DisplayFor(model => model.Cluster.Id)" class="nextBtn">Historical</a>
@@ -50,20 +51,6 @@
         data: {
             datasets: [{
                 data: [
-                    @{
-                        uint clusterMemUsed = 0, clusterMemAvailable = 0;
-                        foreach (var node in Model.NodeSummaries)
-                        {
-                            var utilizationData = node.RecentUtilization;
-                            clusterMemUsed += utilizationData.MemoryUsed;
-                            clusterMemAvailable += utilizationData.MemoryAvailable;
-                        }
-                    }
-                    @{
-                        @Html.Raw((float)clusterMemUsed / (float)1024);
-                        @Html.Raw(",");
-                        @Html.Raw((float)clusterMemAvailable / (float)1024);
-                    }
                 ],
                 backgroundColor: [
                     window.chartColors.red,
@@ -94,7 +81,7 @@
 
     @{
         uint maxNodeMemory = 0;
-        foreach(var node in Model.NodeSummaries)
+        foreach (var node in Model.NodeSummaries)
         {
             uint nodeMemory = node.RecentUtilization.MemoryUsed + node.RecentUtilization.MemoryAvailable;
             if (nodeMemory > maxNodeMemory)
@@ -112,30 +99,18 @@
             datasets: [{
                 label: 'Memory Used',
                 data: [
-                    @foreach(var node in Model.NodeSummaries)
-                    {
-                        var perNodeUtil = node.RecentUtilization;
-                        @Html.Raw((float)perNodeUtil.MemoryUsed / (float)1024);           // display memory in GB rather than MB
-                        @Html.Raw(",");
-                    }
                 ],
                 backgroundColor: window.chartColors.red,
                 borderWidth: 1,
             }, {
                 label: 'Memory Available',
                 data: [
-                    @foreach(var node in Model.NodeSummaries)
-                    {
-                        var perNodeUtil = node.RecentUtilization;
-                        @Html.Raw((float)perNodeUtil.MemoryAvailable / (float)1024);      // display memory in GB rather than MB
-                        @Html.Raw(",");
-                    }
                 ],
                 backgroundColor: window.chartColors.green,
                 borderWidth: 1,
             }],
             labels: [
-                @foreach(var node in Model.NodeSummaries)
+                @foreach (var node in Model.NodeSummaries)
                 {
                     @Html.Raw("\"Node " + node.Id.ToString() + "\",");
                 }
@@ -168,7 +143,7 @@
                         autoSkip: true,
                         maxTicksLimit: 6,
                         suggestedMin: 0,
-                        max: @maxNodeMemoryGB
+                        max: @maxNodeMemoryGB,
                     }
                 }]
             }
@@ -180,7 +155,7 @@
         data: {
             datasets: [{
                 data: [
-                    @foreach(var node in Model.NodeSummaries)
+                    @foreach (var node in Model.NodeSummaries)
                     {
                         var powerData = node.RecentPower;
                         @Html.Raw(powerData.Current.ToString());
@@ -192,7 +167,7 @@
                 label: 'Per-Node Current Draw'
             }],
             labels: [
-                @foreach(var node in Model.NodeSummaries)
+                @foreach (var node in Model.NodeSummaries)
                 {
                     @Html.Raw("\'Node " + node.Id.ToString() + "\',");
                 }
@@ -230,25 +205,10 @@
 
     @{
         List<uint> cpuPointLabels = new List<uint>();
-        List<List<float>> perCoreNodeUtilizationPoints = new List<List<float>>(Model.NodeSummaries[0].RecentUtilization.Cores.Count());
-        for (int i = 0; i < Model.NodeSummaries[0].RecentUtilization.Cores.Count(); i++)
-        {
-            perCoreNodeUtilizationPoints.Add(new List<float>());
-        }
         foreach (var node in Model.NodeSummaries)
         {
-            List<float> perCoreCPUUsage = new List<float>();
-            foreach (var core in node.RecentUtilization.Cores)
-            {
-                perCoreCPUUsage.Add(core.UtilizationPercentage);
-            }
-            for (int i = 0; i < perCoreCPUUsage.Count(); i++)
-            {
-                perCoreNodeUtilizationPoints[i].Add(perCoreCPUUsage[i]);
-            }
             cpuPointLabels.Add(node.Id);
         }
-
         List<string> colorList = new List<string>()
         {
             "rgb(255, 99, 132)",    // red
@@ -261,37 +221,22 @@
         };
     }
 
-    var cpuUtilizationLabels = [@Html.Raw(string.Join(',', cpuPointLabels))];
-
     var clusterPerNodeCPUUtilizationRtData = {
         labels: [
-            @foreach(var label in cpuPointLabels)
+            @foreach (var label in cpuPointLabels)
             {
                 @Html.Raw("\'Node " + label + "\',");
             }
         ],
         datasets: [
-            @{
-                for (int i = 0; i < Model.NodeSummaries[0].RecentUtilization.Cores.Count(); i++)
-                {
-                    @Html.Raw('{');
-                    @Html.Raw("label: \'Node " + i.ToString() + " (%)\',\n");
-                    @Html.Raw("backgroundColor: \'" + colorList[i % colorList.Count()] + "\',\n");
-                    @Html.Raw("borderWidth: 1,\n");
-                    @Html.Raw("data: [");
-                    foreach(var utilPoint in perCoreNodeUtilizationPoints[i])
-                    {
-                        @Html.Raw(utilPoint.ToString());
-                        @Html.Raw(',');
-                    }
-                    @Html.Raw("\n]")
-                    @Html.Raw("}\n");
-                    if (i < Model.Cluster.Nodes.Count() - 1)
-                    {
-                        @Html.Raw(',');
-                    }
-                    @Html.Raw('\n');
-                }
+            @for (int i = 0; i < Model.NodeSummaries[0].RecentUtilization.Cores.Count(); i++)
+            {
+                @Html.Raw('{');
+                @Html.Raw("label: \'Core " + i + " (%)\',\n");
+                @Html.Raw("backgroundColor: \'" + colorList[i % colorList.Count()] + "\',\n");
+                @Html.Raw("borderWidth: 1,\n");
+                @Html.Raw("data: [],\n");
+                @Html.Raw("},");
             }
         ]
     };
@@ -333,12 +278,6 @@
         data: {
             datasets: [{
                 data: [
-                    @foreach(var node in Model.NodeSummaries)
-                    {
-                        var powerData = node.RecentPower;
-                        @Html.Raw(powerData.Power.ToString());
-                        @Html.Raw(",");
-                    }
                 ],
                 backgroundColor: window.chartColors.orange,
                 borderWidth: 1,
@@ -385,23 +324,74 @@
         var clusterPerNodeMemoryUtilizationRTCtx = this.document.getElementById('cluster-per-node-memory-utilization-rt').getContext('2d');
         var clusterPerNodeCurrentUtilizationRTCtx = this.document.getElementById('cluster-per-node-current-utilization-rt').getContext('2d');
         var clusterPerNodePowerUtilizationRTCtx = this.document.getElementById('cluster-per-node-power-utilization-rt').getContext('2d');
+        var clusterPerNodeCPUUtilizationRTCtx = this.document.getElementById('cluster-per-node-cpu-usage-rt').getContext('2d');
 
         window.clusterMemoryChart = new Chart(clusterMemoryCtx, this.clusterMemoryUtilizationRTConfig);
         window.clusterPerNodeMemoryChart = new Chart(clusterPerNodeMemoryUtilizationRTCtx, this.clusterPerNodeMemoryUtilizationRTConfig);
         window.clusterPerNodeCurrentChart = new Chart(clusterPerNodeCurrentUtilizationRTCtx, this.clusterPerNodeCurrentUtilizationRTConfig);
         window.clusterPerNodePowerChart = new Chart(clusterPerNodePowerUtilizationRTCtx, this.clusterPerNodePowerUtilizationRTConfig);
-
-        var clusterPerNodeCPUUtilizationRTCtx = this.document.getElementById('cluster-per-node-cpu-usage-rt').getContext('2d');
-        var historicalCpuChart = new Chart(clusterPerNodeCPUUtilizationRTCtx, {
+        window.clusterPerNodeCPUChart = new Chart(clusterPerNodeCPUUtilizationRTCtx, {
             type: 'bar',
             data: clusterPerNodeCPUUtilizationRtData,
             options: clusterPerNodeCPUUtilizationRtConfig,
         });
     };
 
-    setInterval(function () {
-        location.reload(true)
-    }, @ViewData["ReportingInterval"]*1000);
+    $(document).ready(updateChartData);
+    setInterval(updateChartData, @ViewData["ReportingInterval"]* 1000);
+
+    var chartColorValues = Object.keys(window.chartColors).map(function (key) {
+        return window.chartColors[key];
+    });
+
+    function updateChartData() {
+        $.ajax({
+            type: "GET",
+            url: "../GraphDataLiveView/GetClusterUtilization?id=@Html.DisplayFor(model => model.Cluster.Id)",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (realtimeData) {
+                console.log(realtimeData);
+                clusterPerNodePowerChart.data.datasets[0].data = realtimeData.perNodePowerUtilization;
+                clusterPerNodePowerChart.update();
+
+                var clusterMemoryChartData = [realtimeData.clusterMemoryUsedGB, realtimeData.clusterMemoryAvailableGB];
+                clusterMemoryChart.data.datasets[0].data = clusterMemoryChartData;
+                clusterMemoryChart.update();
+
+                //clusterPerNodeCPUChart.data.datasets.splice(0, realtimeData.perNodeCpuUtilization.length);
+                $.each(realtimeData.perNodeCpuUtilization, function (i, core) {
+                    //var newDataset = {
+                    //    label: "Core " + i + " (%)",
+                    //    backgroundColor: chartColorValues[i % chartColorValues.length],
+                    //    borderWidth: 1,
+                    //    data: core,
+                    //};
+                    //clusterPerNodeCPUChart.data.datasets.push(newDataset);
+                    clusterPerNodeCPUChart.data.datasets[i].data = core;
+                });
+                clusterPerNodeCPUChart.update();
+
+                clusterPerNodeMemoryChart.data.datasets[0].data = realtimeData.perNodeMemoryUsedGB;
+                clusterPerNodeMemoryChart.data.datasets[1].data = realtimeData.perNodeMemoryAvailableGB;
+                clusterPerNodeMemoryChart.update();
+
+                clusterPerNodeCurrentChart.data.datasets[0].data = realtimeData.perNodeCurrentUtilization;
+                clusterPerNodeCurrentChart.update();
+
+                var updated = document.getElementById("last-updated");
+                console.log(updated);
+                updated.innerHTML = "Last Updated: " + realtimeData.timeStamp;
+            },
+            failure: function (data) {
+                alert(data.responseText);
+            },
+            error: function (data) {
+                alert(data.responseText);
+            }
+        });
+    }
+
 </script>
 
 <style>
