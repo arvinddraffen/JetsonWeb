@@ -5,13 +5,14 @@
 
 <script type="text/javascript" src="https://www.chartjs.org/dist/2.9.3/Chart.min.js"></script>
 <script type="text/javascript" src="https://www.chartjs.org/samples/latest/utils.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 
 <h3>Cluster Utilization (Advanced View)</h3>
 
 <div id="HeaderWrapper">
     <div id="ClusterID">
         <h5>Cluster @Html.DisplayNameFor(model => model.Cluster.Id): @Html.DisplayFor(model => model.Cluster.Id)</h5>
-        <p>Last Updated: @ViewData["LastUpdated"]</p>
+        <p id="last-updated">Last Updated: @ViewData["LastUpdated"]</p>
     </div>
     <div id="Overview">
         <a href="ClusterUtilization?id=@Html.DisplayFor(model => model.Cluster.Id)" class="prevBtn">&laquo; Overview</a>
@@ -26,23 +27,25 @@
 </div>
 
 <div id="SummaryTable">
-    <table class="ClusterInfo">
+    <table class="ClusterInfoTable">
         <tr class="ClusterInfo">
-            <th class="ClusterInfo" colspan="4">Node Information</th>
+            <th class="ClusterInfo" colspan="5">Node Information</th>
         </tr>
         <tr class="ClusterInfo">
-            <th class="ClusterInfo">Node ID</th>
-            <th class="ClusterInfo">IP Address</th>
-            <th class="ClusterInfo">Operating System</th>
-            <th class="ClusterInfo">Node Uptime</th>
+            <th class="ClusterInfoID">Node ID</th>
+            <th class="ClusterInfoIP">IP Address</th>
+            <th class="ClusterInfoOS">Operating System</th>
+            <th class="ClusterInfoUT">Node Uptime</th>
+            <th class="ClusterInfoUT">Last Update Received</th>
         </tr>
         @foreach (var node in Model.NodeSummaries)
         {
     <tr class="ClusterInfo">
-        <td class="ClusterInfo"> @Html.DisplayFor(modelItem => node.Id) </td>
-        <td class="ClusterInfo"> @Html.DisplayFor(modelItem => node.Node.IPAddress) </td>
-        <td class="ClusterInfo"> @Html.DisplayFor(modelItem => node.Node.OperatingSystem) </td>
-        <td class="ClusterInfo"> @Html.DisplayFor(modelItem => node.Node.UpTime) </td>
+        <td id=@Html.Raw("\"nodeid_" + node.Id.ToString() + "\"") class="ClusterInfoID"> @Html.DisplayFor(modelItem => node.Id) </td>
+        <td id=@Html.Raw("\"nodeip_" + node.Id.ToString() + "\"") class="ClusterInfoIP"> @Html.DisplayFor(modelItem => node.Node.IPAddress) </td>
+        <td id=@Html.Raw("\"nodeos_" + node.Id.ToString() + "\"") class="ClusterInfoOS"> @Html.DisplayFor(modelItem => node.Node.OperatingSystem) </td>
+        <td id=@Html.Raw("\"nodeuptime_" + node.Id.ToString() + "\"") class="ClusterInfoUT"> @Html.DisplayFor(modelItem => node.Node.UpTime) </td>
+        <td id=@Html.Raw("\"nodelastrecv_" + node.Id.ToString() + "\"") class="ClusterInfoLUR"></td>
     </tr>
         }
     </table>
@@ -55,12 +58,6 @@
         data: {
             datasets: [{
                 data: [
-                    @foreach(var node in Model.NodeSummaries)
-                    {
-                        var powerData = node.RecentPower;
-                        @Html.Raw(powerData.Voltage.ToString());
-                        @Html.Raw(",");
-                    }
                 ],
                 backgroundColor: window.chartColors.purple,
                 borderWidth: 1,
@@ -106,29 +103,68 @@
     window.onload = function () {
         var clusterPerNodeVoltageUtilizationRTCtx = this.document.getElementById('cluster-per-node-voltage-utilization-rt').getContext('2d');
         window.clusterPerNodeVoltageChart = new Chart(clusterPerNodeVoltageUtilizationRTCtx, this.clusterPerNodeVoltageUtilizationRTConfig);
+        updateData();
     };
 
-    setInterval(function () {
-        location.reload();
-    }, @ViewData["ReportingInterval"]*1000);
+    setInterval(updateData, @ViewData["ReportingInterval"]* 1000);
+
+
+    function updateData() {
+        $.ajax({
+            type: "GET",
+            url: "../AdvancedViewLive/GetAdvancedClusterUtilization?id=@Html.DisplayFor(model => model.Cluster.Id)",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (realtimeData) {
+                console.log(realtimeData);
+                clusterPerNodeVoltageChart.data.datasets[0].data = realtimeData.perNodeVoltageUtilization;
+                clusterPerNodeVoltageChart.update();
+
+                $.each(realtimeData.nodeIpAddresses, function (i, nodeIP) {
+                    var ipInTable = document.getElementById("nodeip_".concat(i.toString()));
+                    ipInTable.innerHTML = nodeIP;
+                });
+
+                $.each(realtimeData.nodeOperatingSystems, function (i, nodeOS) {
+                    var osInTable = document.getElementById("nodeos_".concat(i.toString()));
+                    osInTable.innerHTML = nodeOS;
+                });
+
+                $.each(realtimeData.nodeUpTimes, function (i, nodeUpTime) {
+                    var uptimeInTable = document.getElementById("nodeuptime_".concat(i.toString()));
+                    uptimeInTable.innerHTML = nodeUpTime;
+                });
+
+                $.each(realtimeData.perNodeLastDataReceived, function (i, lastData) {
+                    console.log(lastData);
+                    var lastRecvInTable = document.getElementById("nodelastrecv_".concat(i.toString()));
+                    lastRecvInTable.innerHTML = lastData;
+                });
+
+                var updated = document.getElementById("last-updated");
+                updated.innerHTML = "Last Updated: " + realtimeData.timeStamp;
+            },
+            failure: function (realtimeData) {
+
+            },
+            error: function (realtimeData) {
+
+            }
+        });
+    }
 </script>
 
 <style>
-    .ClusterInfo {
+    .ClusterInfo, .ClusterInfoID, .ClusterInfoIP, .ClusterInfoOS, .ClusterInfoUT, .ClusterInfoLUR {
         font-family: arial, sans-serif;
         border-collapse: collapse;
-        width: 25%;
         border: 1px solid black;
         text-align: center;
     }
 
-    th.ClusterInfo {
+    th.ClusterInfo, th.ClusterInfoID, th.ClusterInfoIP, th.ClusterInfoOS, th.ClusterInfoUT, th.ClusterInfoLUR {
         padding: 6px;
         background-color: #dddddd;
-    }
-
-    td.ClusterInfo {
-        padding: 3px;
     }
 
     tr.ClusterInfo:hover {

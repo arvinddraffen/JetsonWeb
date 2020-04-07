@@ -351,7 +351,6 @@
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             success: function (realtimeData) {
-                console.log(realtimeData);
                 clusterPerNodePowerChart.data.datasets[0].data = realtimeData.perNodePowerUtilization;
                 clusterPerNodePowerChart.update();
 
@@ -380,7 +379,6 @@
                 clusterPerNodeCurrentChart.update();
 
                 var updated = document.getElementById("last-updated");
-                console.log(updated);
                 updated.innerHTML = "Last Updated: " + realtimeData.timeStamp;
             },
             failure: function (data) {

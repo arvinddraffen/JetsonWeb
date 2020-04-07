@@ -218,6 +218,8 @@ namespace JetsonWeb.Controllers
             var intervals = this.GenerateEvenIntervals(start, end, numberOfDataPoints);
             intervals.Add(DateTime.Now); // ensure the last data point is current if possible
 
+            DateTime latestTimestamp = DateTime.Now.AddDays(-14);
+
             foreach (var interval in intervals)
             {
                 var lowerInterval = interval.AddSeconds(-reportingInterval);
@@ -231,6 +233,7 @@ namespace JetsonWeb.Controllers
                     .Where(e => e.TimeStamp >= lowerInterval && e.TimeStamp <= upperInterval)
                     .ToList();
 
+
                 if (powerEntries.Any() && utilizationEntries.Any())
                 {
                     // TODO, maybe check for the case where one or more nodes don't have a datapoint at this interval.
@@ -238,6 +241,10 @@ namespace JetsonWeb.Controllers
                     {
                         nodeSummary.HistoricalPower.Add(powerEntries.First(x => x.GlobalNodeId == nodeSummary.Node.GlobalId));
                         nodeSummary.HistoricalUtilization.Add(utilizationEntries.First(x => x.GlobalNodeId == nodeSummary.Node.GlobalId));
+                        if (powerEntries.First(x => x.GlobalNodeId == nodeSummary.Node.GlobalId).Timestamp > latestTimestamp)
+                        {
+                            latestTimestamp = powerEntries.First(x => x.GlobalNodeId == nodeSummary.Node.GlobalId).Timestamp;
+                        }
                     }
                 }
             }
@@ -245,7 +252,7 @@ namespace JetsonWeb.Controllers
             this.ViewBag.PowerDataCount = result.NodesSummariesHistorical.First().HistoricalPower.Count();
             this.ViewBag.UtilizationDataCount = result.NodesSummariesHistorical.First().HistoricalUtilization.Count();
             this.ViewBag.ReportingInterval = reportingInterval;
-            this.ViewData["LastUpdated"] = DateTime.Now;
+            this.ViewData["LastUpdated"] = latestTimestamp;
 
             return this.View(result);
         }
