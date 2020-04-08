@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
-using JetsonModels;
 using JetsonModels.Context;
 using JetsonModels.Database;
 using JetsonWeb.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace JetsonWeb.Controllers
 {
@@ -34,7 +29,7 @@ namespace JetsonWeb.Controllers
         /// <summary>
         /// Returns data for the real-time data view to allow dynamic page updating.
         /// </summary>
-        /// <param name="id">The id of the cluster for which to return data.</param>
+        /// <param name="id">The id of the <see cref="Cluster"/> for which to return data.</param>
         /// <returns>A JSON encoded version of the latest <see cref="Cluster"/> data.</returns>
         public ActionResult<ClusterUtilizationData> GetClusterUtilization(uint id)
         {

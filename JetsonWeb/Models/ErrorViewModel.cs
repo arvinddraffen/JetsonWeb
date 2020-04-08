@@ -1,5 +1,3 @@
-using System;
-
 namespace JetsonWeb.Models
 {
     public class ErrorViewModel
